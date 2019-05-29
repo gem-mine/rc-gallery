@@ -1,0 +1,41 @@
+@import "./variable";
+
+@font-face {
+  font-family: 'anticon';
+  src: url('@{icon-url}.eot'); /* IE9*/
+  src:
+    /* IE6-IE8 */
+    url('@{icon-url}.eot?#iefix') format('embedded-opentype'),
+    /* chrome、firefox */
+    url('@{icon-url}.woff') format('woff'),
+    /* chrome、firefox、opera、Safari, Android, iOS 4.2+*/
+    url('@{icon-url}.ttf') format('truetype'),
+    /* iOS 4.1- */
+    url('@{icon-url}.svg#iconfont') format('svg');
+}
+
+.@{iconfont-css-prefix} {
+  display: inline-block;
+  font-style: normal;
+  vertical-align: baseline;
+  text-align: center;
+  text-transform: none;
+  line-height: 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  &:before {
+    display: block;
+    font-family: "anticon" !important;
+  }
+}
+.@{iconfont-css-prefix}-left:before { content: "\e620"; }
+.@{iconfont-css-prefix}-right:before { content: "\e61f"; }
+.@{iconfont-css-prefix}-play-circle:before { content: "\e6d0"; }
+.@{iconfont-css-prefix}-reload:before { content: "\e616"; }
+.@{iconfont-css-prefix}-caret-up:before { content: "\e607"; }
+.@{iconfont-css-prefix}-caret-down:before { content: "\e606"; }
+.@{iconfont-css-prefix}-plus-circle:before { content: "\e626"; }
+.@{iconfont-css-prefix}-minus-circle:before { content: "\e622"; }
+.@{iconfont-css-prefix}-close:before { content: "\e633"; }
+.@{iconfont-css-prefix}-pause:before { content: "\e63d"; }

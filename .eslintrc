@@ -1,0 +1,13 @@
+{
+  "root": true,
+  "parser": "babel-eslint",
+  "extends": ["standard", "standard-react"],
+  "plugins": ["react"],
+  "rules": {
+    "semi": ["error","never"],
+    "camelcase": 0,
+    "prefer-const": 2,
+    "space-before-function-paren": [2],
+    "jsx-quotes": [2, "prefer-double"]
+  }
+}
