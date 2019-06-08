@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import Util, { MAX_ZOOM_SIZE, MIN_ZOOM_SIZE } from './util'
+import Util from './util'
 import Toolbar from './Toolbar'
 import ImageBox from './ImageBox'
 import Footer from './Footer'
@@ -28,7 +28,10 @@ class Gallery extends Component {
     onThumbnailClick: PropTypes.func,
     onImageLoad: PropTypes.func,
     onImageLoadError: PropTypes.func,
-    customToolbarItem: PropTypes.func,
+    customToolbarItem: React.PropTypes.func,
+    zoomStep: React.PropTypes.number,
+    maxZoomSize: React.PropTypes.number,
+    minZoomSize: React.PropTypes.number,
     closeIcon: PropTypes.node,
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
@@ -58,6 +61,9 @@ class Gallery extends Component {
     autoPlay: false,
     playSpeed: 2000,
     showThumbnail: true,
+    zoomStep: 0.2,
+    maxZoomSize: 3,
+    minZoomSize: 0.2,
     customToolbarItem: () => {}
   }
 
@@ -348,6 +354,7 @@ class Gallery extends Component {
   loadImage = src => {
     const img = new window.Image()
     const that = this
+    const { minZoomSize, maxZoomSize } = this.props
     img.onload = function () {
       const box = that.imageBox
       const { width, height, top, left } = Util.getPosition({ width: this.width, height: this.height }, box)
@@ -358,8 +365,8 @@ class Gallery extends Component {
         loading: false,
         error: false,
         rotate: 0,
-        disableZoomOut: ratio <= MIN_ZOOM_SIZE,
-        disableZoomIn: ratio >= MAX_ZOOM_SIZE,
+        disableZoomOut: ratio <= minZoomSize,
+        disableZoomIn: ratio >= maxZoomSize,
         ratio,
         width,
         height,
@@ -386,21 +393,21 @@ class Gallery extends Component {
 
   handleZoom = (out = false) => {
     const { width, rotate } = this.state
+    const { zoomStep, minZoomSize, maxZoomSize } = this.props
     const ratio = width / this.imageWidth
-    if ((ratio > MIN_ZOOM_SIZE && out) || (ratio < MAX_ZOOM_SIZE && !out)) {
-      const r = Util.getZoomRatio(ratio, out)
+    if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
+      const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
       const w = this.imageWidth * r
       const h = this.imageHeight * r
       const box = this.imageBox
       const offset = Util.getZoomOffset({ width: w, height: h }, box, Util.isRotation(rotate))
-
       this.setState({
         width: w,
         height: h,
         top: offset.top,
         left: offset.left,
-        disableZoomOut: r <= MIN_ZOOM_SIZE,
-        disableZoomIn: r >= MAX_ZOOM_SIZE,
+        disableZoomOut: r <= minZoomSize,
+        disableZoomIn: r >= maxZoomSize,
         ratio: r
       })
     } else {

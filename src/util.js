@@ -1,9 +1,6 @@
 /**
  * 一些辅助工具函数
  */
-export const ZOOM_STEP = 0.2
-export const [MAX_ZOOM_SIZE, MIN_ZOOM_SIZE] = [3, 0.2]
-
 let scrollBarCached
 
 export default {
@@ -94,15 +91,43 @@ export default {
     return angle % 180 !== 0
   },
 
-  getZoomRatio (v, out = false) {
-    const n = parseInt(v / ZOOM_STEP, 10)
+  getZoomRatio (v, { zoomStep, minZoomSize, maxZoomSize }, out = false) {
+    const n = parseInt(this.divide(v, zoomStep), 10)
     if (out) {
       // 缩小
-      return Math.max(MIN_ZOOM_SIZE, (n - 1) * ZOOM_STEP)
+      return Math.max(minZoomSize, (n - 1) * zoomStep)
     } else {
       // 放大
-      return Math.min(MAX_ZOOM_SIZE, (n + 1) * ZOOM_STEP)
+      return Math.min(maxZoomSize, this.multiple(n + 1, zoomStep))
     }
+  },
+
+  // 浮点计算精度问题
+  multiple (a, b) {
+    let sumDecimal = 0
+    const aStr = a.toString()
+    const bStr = b.toString()
+    try {
+      sumDecimal += aStr.split('.')[1].length
+    } catch (f) {}
+    try {
+      sumDecimal += bStr.split('.')[1].length
+    } catch (f) {}
+    return Number(aStr.replace('.', '')) * Number(bStr.replace('.', '')) / Math.pow(10, sumDecimal)
+  },
+
+  divide (a, b) {
+    let aDecimal = 0
+    let bDecimal = 0
+    try {
+      aDecimal = a.toString().split('.')[1].length
+    } catch (g) {}
+    try {
+      bDecimal = b.toString().split('.')[1].length
+    } catch (g) {}
+    const aInt = Number(a.toString().replace('.', ''))
+    const bInt = Number(b.toString().replace('.', ''))
+    return this.multiple(aInt / bInt, Math.pow(10, bDecimal - aDecimal))
   },
 
   addEvent (element, type, fn) {

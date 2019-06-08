@@ -88,6 +88,9 @@ class App extends React.Component {
     if (this.state.isGallery) {
       gallery = (
         <Gallery
+          maxZoomSize={1}
+          minZoomSize={1}
+          zoomStep={0.4}
           images={images}
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}
           onClose={this.closeGallery} />
@@ -592,6 +595,8 @@ ReactDOM.render(<App />, mountNode);
 | thumbnailIcon | 自定义开关缩略图图标 | ReactNode | 无 |
 | prevIcon | 自定义上一页图标 | ReactNode | 无 |
 | nextIcon | 自定义下一页图标 | ReactNode | 无 |
+| maxZoomSize	| 最大可缩放比例 |	number	| 3 |
+| minZoomSize |	最小可缩放比例	| number	| 0.2 |
 | zoomInIcon  | 自定义放大图标 | ReactNode | 无 |
 | zoomOutIcon | 自定义缩小图标 | ReactNode | 无 |
 | rotateRightIcon | 自定义右转图标 | ReactNode | 无 |
