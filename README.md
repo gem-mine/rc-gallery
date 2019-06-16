@@ -571,6 +571,58 @@ ReactDOM.render(<App />, mountNode);
   font-size: 15px;
 }
 ```
+
+### 在文档中显示
+
+在文档中显示。
+
+
+```jsx
+import "rc-gallery/lib/style/";
+import Gallery from 'rc-gallery'
+
+const imageOriginal = [
+      {
+        original: '//img.zmei.me/gm/26828021367384226.jpg',
+        thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
+        description: <div>图片描述</div>
+      },
+      {
+        original: '//img.zmei.me/gm/26828021367384226.jpg',
+        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg',
+      },
+      {
+        original: '//img.zmei.me/gm/priview.jpg',
+        thumbnail: '//img.zmei.me/gm/priview-thumb.jpg'
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg1.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg1-thumb.jpg',
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg2.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
+      }
+    ]
+const images = [...imageOriginal, ...imageOriginal, ...imageOriginal, ...imageOriginal]
+
+class App extends React.Component {
+  render() {
+    return (
+      <div style={{height: '400px'}}> 
+        <Gallery
+          mouseWheelZoom={false}
+          isFullModal={false}
+          images={images}
+          spinClass={<div className={`demo-custom-spin`}>loading...</div>}
+          onClose={this.closeGallery} />
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<App />, mountNode);
+```
 ## API
 
 | 参数        | 说明                                                | 类型        | 默认值 |
@@ -597,6 +649,7 @@ ReactDOM.render(<App />, mountNode);
 | nextIcon | 自定义下一页图标 | ReactNode | 无 |
 | maxZoomSize	| 最大可缩放比例 |	number	| 3 |
 | minZoomSize |	最小可缩放比例	| number	| 0.2 |
+| mouseWheelZoom | 开启鼠标滚轮放大缩小	| boolean	| true |
 | zoomInIcon  | 自定义放大图标 | ReactNode | 无 |
 | zoomOutIcon | 自定义缩小图标 | ReactNode | 无 |
 | rotateRightIcon | 自定义右转图标 | ReactNode | 无 |

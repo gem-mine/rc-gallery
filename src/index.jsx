@@ -35,7 +35,9 @@ class Gallery extends Component {
     closeIcon: PropTypes.node,
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
-    nextIcon: PropTypes.node
+    nextIcon: PropTypes.node,
+    isFullModal: PropTypes.bool, // 是否弹出全屏
+    mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
@@ -64,7 +66,9 @@ class Gallery extends Component {
     zoomStep: 0.2,
     maxZoomSize: 3,
     minZoomSize: 0.2,
-    customToolbarItem: () => {}
+    customToolbarItem: () => {},
+    isFullModal: true,
+    mouseWheelZoom: true
   }
 
   state = {
@@ -84,7 +88,8 @@ class Gallery extends Component {
     disablePrev: true,
     isPlaying: false, // 是否在播放状态 控制toolbar图标
     thumbnailScroll: 0, // 缩略图的位置
-    showThumbnail: true // 是否显示缩略图
+    showThumbnail: true, // 是否显示缩略图
+    mouseWheelZoom: true
   }
 
   constructor (props) {
@@ -114,22 +119,37 @@ class Gallery extends Component {
   }
 
   componentDidMount () {
+    const {
+      showThumbnail,
+      autoPlay,
+      keymap,
+      isFullModal,
+      mouseWheelZoom
+    } = this.props
     this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
 
     Util.addEvent(window, 'resize', this.handleResize)
     Util.addEvent(document, 'mousedown', this.handleMoveStart)
     Util.addEvent(document, 'mousemove', this.handleMove)
     Util.addEvent(document, 'mouseup', this.handleMoveEnd)
-    Util.addEvent(document, 'mousewheel', this.handleWheel)
-    Util.addEvent(document, 'wheel', this.handleWheel) // for firefox
-
-    if (this.props.showThumbnail) {
-      this.handleShowThumbnail(this.props.showThumbnail)
+    if (mouseWheelZoom) {
+      Util.addEvent(document, 'mousewheel', this.handleWheel) //  for firefox
+      Util.addEvent(document, 'wheel', this.handleWheel)
+      // 容器内模式的时候阻止页面滚动
+      Util.addEvent(this.imageBox, 'wheel', (e) => {
+        e.preventDefault()
+      })
+      Util.addEvent(this.imageBox, 'mousewheel', (e) => {
+        e.preventDefault()
+      })
     }
-    if (this.props.autoPlay) {
+    if (showThumbnail) {
+      this.handleShowThumbnail(showThumbnail)
+    }
+    if (autoPlay) {
       this.play()
     }
-    if (this.props.keymap) {
+    if (keymap) {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
     // 鼠标移入图片内时停止自动播放
@@ -138,18 +158,32 @@ class Gallery extends Component {
       Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
     }
-    this.addScrollingEffect()
+    if (isFullModal) {
+      this.addScrollingEffect()
+    }
     this.updateThumbnailScroll()
     this.loadImage(this.state.src)
   }
 
   componentWillUnmount () {
+    const { mouseWheelZoom } = this.props
+
     Util.removeEvent(window, 'resize', this.handleResize)
     Util.removeEvent(document, 'mousedown', this.handleMoveStart)
     Util.removeEvent(document, 'mousemove', this.handleMove)
     Util.removeEvent(document, 'mouseup', this.handleMoveEnd)
-    Util.removeEvent(document, 'mouseover', this.handleMouseOver)
-    Util.removeEvent(document, 'mousewheel', this.handleWheel)
+    if (mouseWheelZoom) {
+      Util.removeEvent(document, 'mousewheel', this.handleWheel) //  for firefox
+      Util.removeEvent(document, 'wheel', this.handleWheel)
+      // 容器内模式的时候阻止页面滚动
+      Util.removeEvent(this.imageBox, 'wheel', (e) => {
+        e.preventDefault()
+      })
+      Util.removeEvent(this.imageBox, 'mousewheel', (e) => {
+        e.preventDefault()
+      })
+    }
+    // Util.removeEvent(document, 'mousewheel', this.handleWheel)
     Util.removeEvent(document, 'wheel', this.handleWheel)
     if (this.props.keymap) {
       Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
@@ -163,7 +197,9 @@ class Gallery extends Component {
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
     }
-    this.removeScrollingEffect()
+    if (this.props.isFullModal) {
+      this.removeScrollingEffect()
+    }
   }
 
   addScrollingEffect = () => {
@@ -236,10 +272,12 @@ class Gallery extends Component {
   }
 
   handleWheel = e => {
+    console.log('handleWheel')
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
       if (Util.isInside(e, box) && e.deltaY !== 0) {
-        this.handleZoom(e.deltaY ? e.deltaY < 0 : e.wheelDelta > 0) // wheelDelta for ie8
+        // todo: 这里有个问题，就是实际初始化的size可能不是1，这时候设置min和max size的问题
+        this.handleZoom(e.deltaY < 0)
       }
     }
   }
@@ -533,7 +571,16 @@ class Gallery extends Component {
   }
 
   render () {
-    const { prefixCls, showToolbar, showThumbnail, images, closeIcon, prevIcon, nextIcon } = this.props
+    const {
+      prefixCls,
+      showToolbar,
+      showThumbnail,
+      images,
+      closeIcon,
+      prevIcon,
+      nextIcon,
+      isFullModal
+    } = this.props
 
     let prev = null
     let next = null
@@ -591,7 +638,9 @@ class Gallery extends Component {
     }
 
     return (
-      <div className={`${prefixCls}`}>
+      <div className={classNames(prefixCls, {
+        [`${prefixCls}-inline`]: !isFullModal
+      })}>
         <div
           className={`${prefixCls}-content`}
           style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
