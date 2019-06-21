@@ -581,15 +581,15 @@ ReactDOM.render(<App />, mountNode);
 import "rc-gallery/lib/style/";
 import Gallery from 'rc-gallery'
 
-const imageOriginal = [
+const images = [
       {
-        original: '//img.zmei.me/gm/26828021367384226.jpg',
+        original: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5.jpg',
         thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
         description: <div>图片描述</div>
       },
       {
         original: '//img.zmei.me/gm/26828021367384226.jpg',
-        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg',
+        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg'
       },
       {
         original: '//img.zmei.me/gm/priview.jpg',
@@ -604,18 +604,39 @@ const imageOriginal = [
         thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
       }
     ]
-const images = [...imageOriginal, ...imageOriginal, ...imageOriginal, ...imageOriginal]
 
 class App extends React.Component {
+  state = {
+    isGallery: true,
+  }
+  openGallery = (index) => {
+    this.setState({
+      isGallery: true,
+    })
+  }
+  closeGallery = () => {
+    this.setState({
+      isGallery: false
+    })
+  }
   render() {
+    let gallery = null
+    if (this.state.isGallery) {
+      gallery = (
+        <div style={{height: '400px'}}>
+          <Gallery
+            images={images}
+            infinite={false}
+            isFullModal={false}
+            onClose={this.closeGallery} />
+        </div>
+      )
+    }
+
     return (
-      <div style={{height: '400px'}}> 
-        <Gallery
-          mouseWheelZoom={false}
-          isFullModal={false}
-          images={images}
-          spinClass={<div className={`demo-custom-spin`}>loading...</div>}
-          onClose={this.closeGallery} />
+      <div>
+        {gallery}
+        {this.state.isGallery ? null : <button onClick={this.openGallery}>查看图片</button>}
       </div>
     );
   }
