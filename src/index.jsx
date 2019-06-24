@@ -587,24 +587,22 @@ class Gallery extends Component {
     if (images.length > 1) {
       const { disablePrev, disableNext } = this.state
       const prevClass = classNames({
-        [`anticon`]: true,
-        [`anticon-left`]: true,
+        [`${prefixCls}-prev`]: true,
         [`${prefixCls}-disable`]: disablePrev
       })
       prev = (
-        <div className={`${prefixCls}-prev`} onClick={disablePrev ? null : this.handlePrev}>
-          { prevIcon || <i className={prevClass} /> }
+        <div className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
+          { prevIcon || <i className="anticon anticon-left" /> }
         </div>
       )
 
       const nextClass = classNames({
-        [`anticon`]: true,
-        [`anticon-right`]: true,
+        [`${prefixCls}-next`]: true,
         [`${prefixCls}-disable`]: disableNext
       })
       next = (
-        <div className={`${prefixCls}-next`} onClick={disableNext ? null : this.handleNext}>
-          { nextIcon || <i className={nextClass} /> }
+        <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
+          { nextIcon || <i className="anticon anticon-right" /> }
         </div>
       )
     }
