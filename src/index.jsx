@@ -126,23 +126,9 @@ class Gallery extends Component {
       displayMode,
       mouseWheelZoom
     } = this.props
-    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
 
     Util.addEvent(window, 'resize', this.handleResize)
-    Util.addEvent(document, 'mousedown', this.handleMoveStart)
-    Util.addEvent(document, 'mousemove', this.handleMove)
-    Util.addEvent(document, 'mouseup', this.handleMoveEnd)
-    if (mouseWheelZoom) {
-      Util.addEvent(document, 'mousewheel', this.handleWheel) //  for firefox
-      Util.addEvent(document, 'wheel', this.handleWheel)
-      // 容器内模式的时候阻止页面滚动
-      Util.addEvent(this.imageBox, 'wheel', (e) => {
-        e.preventDefault()
-      })
-      Util.addEvent(this.imageBox, 'mousewheel', (e) => {
-        e.preventDefault()
-      })
-    }
+
     if (showThumbnail) {
       this.handleShowThumbnail(showThumbnail)
     }
@@ -152,11 +138,24 @@ class Gallery extends Component {
     if (keymap) {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
-    // 鼠标移入图片内时停止自动播放
+
+    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
     if (this.imageBoxRef.imageRef) {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
+      // 鼠标移入图片内时停止自动播放
       Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
+
+      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
+      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
+      Util.addEvent(this.image, 'mousemove', this.handleMove)
+      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
+
+      if (mouseWheelZoom) {
+        // 鼠标滚轮缩放事件
+        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        Util.addEvent(this.image, 'wheel', this.handleWheel)
+      }
     }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
@@ -169,20 +168,7 @@ class Gallery extends Component {
     const { mouseWheelZoom } = this.props
 
     Util.removeEvent(window, 'resize', this.handleResize)
-    Util.removeEvent(document, 'mousedown', this.handleMoveStart)
-    Util.removeEvent(document, 'mousemove', this.handleMove)
-    Util.removeEvent(document, 'mouseup', this.handleMoveEnd)
-    if (mouseWheelZoom) {
-      Util.removeEvent(document, 'mousewheel', this.handleWheel) //  for firefox
-      Util.removeEvent(document, 'wheel', this.handleWheel)
-      // 容器内模式的时候阻止页面滚动
-      Util.removeEvent(this.imageBox, 'wheel', (e) => {
-        e.preventDefault()
-      })
-      Util.removeEvent(this.imageBox, 'mousewheel', (e) => {
-        e.preventDefault()
-      })
-    }
+
     // Util.removeEvent(document, 'mousewheel', this.handleWheel)
     Util.removeEvent(document, 'wheel', this.handleWheel)
     if (this.props.keymap) {
@@ -192,6 +178,15 @@ class Gallery extends Component {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
       Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
+
+      Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
+      Util.removeEvent(this.image, 'mousemove', this.handleMove)
+      Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
+
+      if (mouseWheelZoom) {
+        Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        Util.removeEvent(this.image, 'wheel', this.handleWheel)
+      }
     }
     // 清除自动播放定时器
     if (this.intervalId) {
@@ -272,7 +267,8 @@ class Gallery extends Component {
   }
 
   handleWheel = e => {
-    console.log('handleWheel')
+    // inline模式的时候阻止页面滚动
+    e.preventDefault()
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
       if (Util.isInside(e, box) && e.deltaY !== 0) {
@@ -385,6 +381,7 @@ class Gallery extends Component {
   }
 
   handleMouseOut = () => {
+    this.point = null // inline模式时鼠标图片拖拽鼠标移动到图片外问题
     if (this.isPlayingBefore) {
       this.play()
     }
