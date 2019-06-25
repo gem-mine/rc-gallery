@@ -627,7 +627,7 @@ class App extends React.Component {
           <Gallery
             images={images}
             infinite={false}
-            isFullModal={false}
+            displayMode={'inline'}
             onClose={this.closeGallery} />
         </div>
       )
@@ -648,6 +648,7 @@ ReactDOM.render(<App />, mountNode);
 
 | 参数        | 说明                                                | 类型        | 默认值 |
 |----------- |---------------------------------------------------------  | ---------- |-------|
+| displayMode | 显示模式, 有全屏遮罩模式和插入文档流模式        | Enum{ 'inline', 'modal' }  |  `modal`  |
 | images | 数组对象，存放图片信息 | [Gallery.images[]](#images) | 无 |
 | showToolbar | 是否显示工具条 | boolean | true |
 | showThumbnail | 是否显示缩略图 | boolean | true |

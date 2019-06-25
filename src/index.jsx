@@ -36,7 +36,7 @@ class Gallery extends Component {
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
     nextIcon: PropTypes.node,
-    isFullModal: PropTypes.bool, // 是否弹出全屏
+    displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -67,7 +67,7 @@ class Gallery extends Component {
     maxZoomSize: 3,
     minZoomSize: 0.2,
     customToolbarItem: () => {},
-    isFullModal: true,
+    displayMode: 'modal',
     mouseWheelZoom: true
   }
 
@@ -123,7 +123,7 @@ class Gallery extends Component {
       showThumbnail,
       autoPlay,
       keymap,
-      isFullModal,
+      displayMode,
       mouseWheelZoom
     } = this.props
     this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
@@ -158,7 +158,7 @@ class Gallery extends Component {
       Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
     }
-    if (isFullModal) {
+    if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
     this.updateThumbnailScroll()
@@ -197,7 +197,7 @@ class Gallery extends Component {
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
     }
-    if (this.props.isFullModal) {
+    if (this.props.displayMode === 'modal') {
       this.removeScrollingEffect()
     }
   }
@@ -579,7 +579,7 @@ class Gallery extends Component {
       closeIcon,
       prevIcon,
       nextIcon,
-      isFullModal
+      displayMode
     } = this.props
 
     let prev = null
@@ -637,7 +637,7 @@ class Gallery extends Component {
 
     return (
       <div className={classNames(prefixCls, {
-        [`${prefixCls}-inline`]: !isFullModal
+        [`${prefixCls}-inline`]: displayMode === 'inline'
       })}>
         <div
           className={`${prefixCls}-content`}
