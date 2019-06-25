@@ -35,7 +35,9 @@ class Gallery extends Component {
     closeIcon: PropTypes.node,
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
-    nextIcon: PropTypes.node
+    nextIcon: PropTypes.node,
+    displayMode: PropTypes.string, // 是否弹出全屏
+    mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
@@ -64,7 +66,9 @@ class Gallery extends Component {
     zoomStep: 0.2,
     maxZoomSize: 3,
     minZoomSize: 0.2,
-    customToolbarItem: () => {}
+    customToolbarItem: () => {},
+    displayMode: 'modal',
+    mouseWheelZoom: true
   }
 
   state = {
@@ -84,7 +88,8 @@ class Gallery extends Component {
     disablePrev: true,
     isPlaying: false, // 是否在播放状态 控制toolbar图标
     thumbnailScroll: 0, // 缩略图的位置
-    showThumbnail: true // 是否显示缩略图
+    showThumbnail: true, // 是否显示缩略图
+    mouseWheelZoom: true
   }
 
   constructor (props) {
@@ -114,42 +119,57 @@ class Gallery extends Component {
   }
 
   componentDidMount () {
-    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
+    const {
+      showThumbnail,
+      autoPlay,
+      keymap,
+      displayMode,
+      mouseWheelZoom
+    } = this.props
 
     Util.addEvent(window, 'resize', this.handleResize)
-    Util.addEvent(document, 'mousedown', this.handleMoveStart)
-    Util.addEvent(document, 'mousemove', this.handleMove)
-    Util.addEvent(document, 'mouseup', this.handleMoveEnd)
-    Util.addEvent(document, 'mousewheel', this.handleWheel)
-    Util.addEvent(document, 'wheel', this.handleWheel) // for firefox
 
-    if (this.props.showThumbnail) {
-      this.handleShowThumbnail(this.props.showThumbnail)
+    if (showThumbnail) {
+      this.handleShowThumbnail(showThumbnail)
     }
-    if (this.props.autoPlay) {
+    if (autoPlay) {
       this.play()
     }
-    if (this.props.keymap) {
+    if (keymap) {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
-    // 鼠标移入图片内时停止自动播放
+
+    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
     if (this.imageBoxRef.imageRef) {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
+      // 鼠标移入图片内时停止自动播放
       Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
+
+      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
+      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
+      Util.addEvent(this.image, 'mousemove', this.handleMove)
+      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
+
+      if (mouseWheelZoom) {
+        // 鼠标滚轮缩放事件
+        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        Util.addEvent(this.image, 'wheel', this.handleWheel)
+      }
     }
-    this.addScrollingEffect()
+    if (displayMode === 'modal') {
+      this.addScrollingEffect()
+    }
     this.updateThumbnailScroll()
     this.loadImage(this.state.src)
   }
 
   componentWillUnmount () {
+    const { mouseWheelZoom } = this.props
+
     Util.removeEvent(window, 'resize', this.handleResize)
-    Util.removeEvent(document, 'mousedown', this.handleMoveStart)
-    Util.removeEvent(document, 'mousemove', this.handleMove)
-    Util.removeEvent(document, 'mouseup', this.handleMoveEnd)
-    Util.removeEvent(document, 'mouseover', this.handleMouseOver)
-    Util.removeEvent(document, 'mousewheel', this.handleWheel)
+
+    // Util.removeEvent(document, 'mousewheel', this.handleWheel)
     Util.removeEvent(document, 'wheel', this.handleWheel)
     if (this.props.keymap) {
       Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
@@ -158,12 +178,23 @@ class Gallery extends Component {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
       Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
+
+      Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
+      Util.removeEvent(this.image, 'mousemove', this.handleMove)
+      Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
+
+      if (mouseWheelZoom) {
+        Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        Util.removeEvent(this.image, 'wheel', this.handleWheel)
+      }
     }
     // 清除自动播放定时器
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
     }
-    this.removeScrollingEffect()
+    if (this.props.displayMode === 'modal') {
+      this.removeScrollingEffect()
+    }
   }
 
   addScrollingEffect = () => {
@@ -236,10 +267,13 @@ class Gallery extends Component {
   }
 
   handleWheel = e => {
+    // inline模式的时候阻止页面滚动
+    e.preventDefault()
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
       if (Util.isInside(e, box) && e.deltaY !== 0) {
-        this.handleZoom(e.deltaY ? e.deltaY < 0 : e.wheelDelta > 0) // wheelDelta for ie8
+        // todo: 这里有个问题，就是实际初始化的size可能不是1，这时候设置min和max size的问题
+        this.handleZoom(e.deltaY < 0)
       }
     }
   }
@@ -347,6 +381,7 @@ class Gallery extends Component {
   }
 
   handleMouseOut = () => {
+    this.point = null // inline模式时鼠标图片拖拽鼠标移动到图片外问题
     if (this.isPlayingBefore) {
       this.play()
     }
@@ -533,31 +568,38 @@ class Gallery extends Component {
   }
 
   render () {
-    const { prefixCls, showToolbar, showThumbnail, images, closeIcon, prevIcon, nextIcon } = this.props
+    const {
+      prefixCls,
+      showToolbar,
+      showThumbnail,
+      images,
+      closeIcon,
+      prevIcon,
+      nextIcon,
+      displayMode
+    } = this.props
 
     let prev = null
     let next = null
     if (images.length > 1) {
       const { disablePrev, disableNext } = this.state
       const prevClass = classNames({
-        [`anticon`]: true,
-        [`anticon-left`]: true,
+        [`${prefixCls}-prev`]: true,
         [`${prefixCls}-disable`]: disablePrev
       })
       prev = (
-        <div className={`${prefixCls}-prev`} onClick={disablePrev ? null : this.handlePrev}>
-          { prevIcon || <i className={prevClass} /> }
+        <div className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
+          { prevIcon || <i className="anticon anticon-left" /> }
         </div>
       )
 
       const nextClass = classNames({
-        [`anticon`]: true,
-        [`anticon-right`]: true,
+        [`${prefixCls}-next`]: true,
         [`${prefixCls}-disable`]: disableNext
       })
       next = (
-        <div className={`${prefixCls}-next`} onClick={disableNext ? null : this.handleNext}>
-          { nextIcon || <i className={nextClass} /> }
+        <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
+          { nextIcon || <i className="anticon anticon-right" /> }
         </div>
       )
     }
@@ -591,7 +633,9 @@ class Gallery extends Component {
     }
 
     return (
-      <div className={`${prefixCls}`}>
+      <div className={classNames(prefixCls, {
+        [`${prefixCls}-inline`]: displayMode === 'inline'
+      })}>
         <div
           className={`${prefixCls}-content`}
           style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
