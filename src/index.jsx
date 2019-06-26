@@ -641,7 +641,7 @@ class Gallery extends Component {
           style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
           <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
-            { closeIcon || <i className={`anticon anticon-close`} /> }
+            {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
           {toolbar}
           {prev}
