@@ -627,6 +627,9 @@ class App extends React.Component {
           <Gallery
             images={images}
             infinite={false}
+            maxZoomSize={2}
+            minZoomSize={0.2}
+            zoomStep={0.01}
             displayMode={'inline'}
             onClose={this.closeGallery} />
         </div>

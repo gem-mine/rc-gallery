@@ -116,7 +116,7 @@ export default {
   },
 
   // 浮点计算精度问题
-  multiple (a, b) {
+  multiple (a, b, precision = 3) {
     let sumDecimal = 0
     const aStr = a.toString()
     const bStr = b.toString()
@@ -126,10 +126,12 @@ export default {
     try {
       sumDecimal += bStr.split('.')[1].length
     } catch (f) {}
-    return Number(aStr.replace('.', '')) * Number(bStr.replace('.', '')) / Math.pow(10, sumDecimal)
+    return Number(
+      (Number(aStr.replace('.', '')) * Number(bStr.replace('.', '')) / Math.pow(10, sumDecimal)).toFixed(precision)
+    )
   },
 
-  divide (a, b) {
+  divide (a, b, precision = 3) {
     let aDecimal = 0
     let bDecimal = 0
     try {
@@ -140,7 +142,7 @@ export default {
     } catch (g) {}
     const aInt = Number(a.toString().replace('.', ''))
     const bInt = Number(b.toString().replace('.', ''))
-    return this.multiple(aInt / bInt, Math.pow(10, bDecimal - aDecimal))
+    return this.multiple(aInt / bInt, Math.pow(10, bDecimal - aDecimal), precision)
   },
 
   addEvent (element, type, fn) {

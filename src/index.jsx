@@ -433,7 +433,7 @@ class Gallery extends Component {
   handleZoom = (out = false) => {
     const { width, rotate } = this.state
     const { zoomStep, minZoomSize, maxZoomSize } = this.props
-    const ratio = width / this.imageWidth
+    const ratio = Util.divide(width, this.imageWidth)
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
       const w = this.imageWidth * r
