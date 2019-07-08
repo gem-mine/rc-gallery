@@ -160,7 +160,7 @@ class Gallery extends Component {
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
-    this.updateThumbnailScroll()
+    this.updateThumbnailScroll(this.state.currentIndex)
     this.loadImage(this.state.src)
   }
 
@@ -263,7 +263,7 @@ class Gallery extends Component {
         left
       })
     }
-    this.updateThumbnailScroll()
+    this.updateThumbnailScroll(this.state.currentIndex)
   }
 
   handleWheel = e => {
@@ -272,7 +272,6 @@ class Gallery extends Component {
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
       if (Util.isInside(e, box) && e.deltaY !== 0) {
-        // todo: 这里有个问题，就是实际初始化的size可能不是1，这时候设置min和max size的问题
         this.handleZoom(e.deltaY < 0)
       }
     }
@@ -392,7 +391,12 @@ class Gallery extends Component {
     const { minZoomSize, maxZoomSize } = this.props
     img.onload = function () {
       const box = that.imageBox
-      const { width, height, top, left } = Util.getPosition({ width: this.width, height: this.height }, box)
+      const { width, height, top, left } = Util.getPosition({
+        width: this.width,
+        height: this.height,
+        minZoomSize,
+        maxZoomSize
+      }, box)
       const ratio = width / this.width
       that.imageWidth = this.width
       that.imageHeight = this.height
@@ -547,6 +551,10 @@ class Gallery extends Component {
           } else if (prevIndex > currentIndex) {
             this.setThumbnailScroll(thumbnailScroll + scroll)
           }
+        }
+        if (scroll === 0) {
+          // resize的时候重新定位缩略图位置
+          this.setThumbnailScroll(-(currentIndex * perIndexScroll))
         }
       }
     }
