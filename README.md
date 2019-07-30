@@ -675,6 +675,7 @@ ReactDOM.render(<App />, mountNode);
 | maxZoomSize	| 最大可缩放比例 |	number	| 3 |
 | minZoomSize |	最小可缩放比例	| number	| 0.2 |
 | mouseWheelZoom | 开启鼠标滚轮放大缩小	| boolean	| true |
+| mouseZoomDirection | 自定义鼠标滚轮控制缩放的方向，参数为滚轮事件对象。返回`true`图片缩小，返回`false`图片放大，默认win下滚轮向上放大，向下缩小；mac下相反	| (e) => boolean	| `isMac ? e.deltaY < 0 : e.deltaY > 0` |
 | zoomInIcon  | 自定义放大图标 | ReactNode | 无 |
 | zoomOutIcon | 自定义缩小图标 | ReactNode | 无 |
 | rotateRightIcon | 自定义右转图标 | ReactNode | 无 |
