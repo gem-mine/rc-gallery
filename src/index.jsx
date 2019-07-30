@@ -9,6 +9,8 @@ import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
 
+const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
+
 class Gallery extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
@@ -37,7 +39,8 @@ class Gallery extends Component {
     prevIcon: PropTypes.node,
     nextIcon: PropTypes.node,
     displayMode: PropTypes.string, // 是否弹出全屏
-    mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
+    mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
+    mouseZoomDirection: PropTypes.func
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
@@ -68,7 +71,11 @@ class Gallery extends Component {
     minZoomSize: 0.2,
     customToolbarItem: () => {},
     displayMode: 'modal',
-    mouseWheelZoom: true
+    mouseWheelZoom: true,
+    mouseZoomDirection: (e) => {
+      // 根据系统，win下滚轮向上放大，向下缩小；mac下相反
+      return isMac ? e.deltaY < 0 : e.deltaY > 0
+    }
   }
 
   state = {
@@ -272,7 +279,8 @@ class Gallery extends Component {
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
       if (Util.isInside(e, box) && e.deltaY !== 0) {
-        this.handleZoom(e.deltaY < 0)
+        const { mouseZoomDirection } = this.props
+        this.handleZoom(mouseZoomDirection(e))
       }
     }
   }
