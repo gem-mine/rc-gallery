@@ -61,7 +61,7 @@
     "pre-commit": "1.x",
     "react": "0.14.9",
     "react-dom": "0.14.9",
-    "react-router": "3.2.1",
+    "react-router": "3.2.4",
     "shx": "^0.2.2",
     "stylelint": "^8.4.0",
     "stylelint-config-standard": "^18.0.0"
