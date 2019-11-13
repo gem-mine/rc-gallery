@@ -29,7 +29,7 @@ export default class extends Component {
     src: ''
   }
   render () {
-    const { prefixCls, loading, spinClass, error, width, height, top, left, rotate, src } = this.props
+    const { prefixCls, loading, spinClass, error, width, height, top, left, rotate, src, ...restProps } = this.props
     let loadingComponent = null
     let contentComponent = null
 
@@ -69,7 +69,7 @@ export default class extends Component {
       contentComponent = <img ref={node => { this.imageRef = node }} src={src} style={inline} />
     }
     return (
-      <div className={`${prefixCls}-image`}>
+      <div {...restProps} className={`${prefixCls}-image`}>
         {contentComponent}
         {loadingComponent}
       </div>

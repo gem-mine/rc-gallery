@@ -8,6 +8,7 @@ import Footer from './Footer'
 import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
+import Gesture from 'rc-gesture'
 
 const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 
@@ -66,7 +67,7 @@ class Gallery extends Component {
     autoPlay: false,
     playSpeed: 2000,
     showThumbnail: true,
-    zoomStep: 0.2,
+    zoomStep: 0.05,
     maxZoomSize: 3,
     minZoomSize: 0.2,
     customToolbarItem: () => {},
@@ -147,6 +148,11 @@ class Gallery extends Component {
     }
 
     this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
+    // 阻止穿透滚动
+    Util.addEvent(this.imageBox, 'touchmove', e => {
+      e.preventDefault()
+    })
+
     if (this.imageBoxRef.imageRef) {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
       // 鼠标移入图片内时停止自动播放
@@ -470,6 +476,38 @@ class Gallery extends Component {
     }
   }
 
+  handleMobileZoom = (out = false, ratio) => {
+    const { width, rotate } = this.state
+    const { zoomStep, minZoomSize, maxZoomSize } = this.props
+    // const ratio = Util.divide(width, this.imageWidth)
+    if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
+      const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
+      const w = this.imageWidth * r
+      const h = this.imageHeight * r
+      const box = this.imageBox
+      const offset = Util.getZoomOffset({ width: w, height: h }, box, Util.isRotation(rotate))
+      this.setState({
+        width: w,
+        height: h,
+        top: offset.top,
+        left: offset.left,
+        disableZoomOut: r <= minZoomSize,
+        disableZoomIn: r >= maxZoomSize,
+        ratio: r
+      })
+    } else {
+      if (out) {
+        this.setState({
+          disableZoomOut: true
+        })
+      } else {
+        this.setState({
+          disableZoomIn: true
+        })
+      }
+    }
+  }
+
   handleRotate = angle => {
     const rotate = this.state.rotate + angle
     const box = this.imageBox
@@ -655,7 +693,23 @@ class Gallery extends Component {
         <div
           className={`${prefixCls}-content`}
           style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
-          <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
+          <Gesture
+            enablePinch
+            onPinchIn={(e) => {
+              this.handleMobileZoom(false, e.scale) }
+            }
+            onPinchOut={(e) => {
+              this.handleMobileZoom(true, e.scale) }
+            }
+            onSwipeLeft={() => {
+              this.handlePrev()
+            }}
+            onSwipeRight={() => {
+              this.handleNext()
+            }}
+          >
+            <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
+          </Gesture>
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
             {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
