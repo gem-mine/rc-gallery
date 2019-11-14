@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import Util from './util'
+import Util, { isMac, isMobile } from './util'
 import Toolbar from './Toolbar'
 import ImageBox from './ImageBox'
 import Footer from './Footer'
@@ -9,8 +9,6 @@ import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
 import Gesture from 'rc-gesture'
-
-const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 
 class Gallery extends Component {
   static propTypes = {
@@ -66,7 +64,7 @@ class Gallery extends Component {
     startIndex: 0,
     autoPlay: false,
     playSpeed: 2000,
-    showThumbnail: true,
+    showThumbnail: !isMobile,
     zoomStep: 0.05,
     maxZoomSize: 3,
     minZoomSize: 0.2,
@@ -148,11 +146,6 @@ class Gallery extends Component {
     }
 
     this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
-    // 阻止穿透滚动
-    Util.addEvent(this.imageBox, 'touchmove', e => {
-      e.preventDefault()
-    })
-
     if (this.imageBoxRef.imageRef) {
       this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
       // 鼠标移入图片内时停止自动播放
@@ -160,9 +153,9 @@ class Gallery extends Component {
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
 
       // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
-      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.addEvent(this.image, 'mousemove', this.handleMove)
-      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
+      // Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
+      // Util.addEvent(this.image, 'mousemove', this.handleMove)
+      // Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
 
       if (mouseWheelZoom) {
         // 鼠标滚轮缩放事件
@@ -174,6 +167,8 @@ class Gallery extends Component {
       this.addScrollingEffect()
     }
     this.updateThumbnailScroll(this.state.currentIndex)
+    // 手机端滚动穿透
+    Util.fixedBody()
     this.loadImage(this.state.src)
   }
 
@@ -207,6 +202,7 @@ class Gallery extends Component {
     }
     if (this.props.displayMode === 'modal') {
       this.removeScrollingEffect()
+      Util.looseBody()
     }
   }
 
@@ -284,7 +280,7 @@ class Gallery extends Component {
     e.preventDefault()
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
-      if (Util.isInside(e, box) && e.deltaY !== 0) {
+      if (Util.isInside({ x: e.clientX, y: e.clientY }, box) && e.deltaY !== 0) {
         const { mouseZoomDirection } = this.props
         this.handleZoom(mouseZoomDirection(e))
       }
@@ -328,61 +324,121 @@ class Gallery extends Component {
   }
 
   handleMoveStart = e => {
-    Util.stopDefault(e)
-    const event = e || window.event
-    const box = this.imageBox
-    const target = event.target || event.srcElement
-    if (!Util.isInside(event, box)) {
-      return
+    if (isMobile) {
+      const { srcEvent, moveStatus } = e
+      srcEvent.preventDefault()
+      const box = this.imageBox
+      const { x, y } = moveStatus
+      console.log('MoveStart:', Util.isInside({ x, y }, box))
+      // if (!Util.isInside({ x, y }, box)) {
+      //   return
+      // }
+      if (!srcEvent.target || srcEvent.target.tagName.toUpperCase() !== 'IMG') {
+        return
+      }
+      this.point = [x, y]
+      this.boxWidth = box.offsetWidth
+      this.boxHeight = box.offsetHeight
+    } else {
+      Util.stopDefault(e)
+      const event = e || window.event
+      const box = this.imageBox
+      const target = event.target || event.srcElement
+      if (!Util.isInside({ x: event.clientX, y: event.clientY }, box)) {
+        return
+      }
+      if (!target || target.tagName.toUpperCase() !== 'IMG') {
+        return
+      }
+      this.point = [event.pageX || event.clientX, event.pageY || event.clientX]
+      this.boxWidth = box.offsetWidth
+      this.boxHeight = box.offsetHeight
     }
-    if (!target || target.tagName.toUpperCase() !== 'IMG') {
-      return
-    }
-    this.point = [event.pageX || event.clientX, event.pageY || event.clientX]
-    this.boxWidth = box.offsetWidth
-    this.boxHeight = box.offsetHeight
   }
 
   handleMoveEnd = e => {
-    Util.stopDefault(e)
-    this.point = null
+    if (isMobile) {
+      const { srcEvent } = e
+      srcEvent.preventDefault()
+      this.point = null
+    } else {
+      Util.stopDefault(e)
+      this.point = null
+    }
   }
 
   handleMove = e => {
-    Util.stopDefault(e)
-    if (!this.point) {
-      return
-    }
-    const event = e || window.event
-    const state = this.state
-    let x, y
-    x = (event.pageX || event.clientX) - this.point[0]
-    y = (event.pageY || event.clientY) - this.point[1]
-    this.point = [event.pageX || event.clientX, event.pageY || event.clientY]
+    if (isMobile) {
+      const { srcEvent, moveStatus } = e
+      srcEvent.preventDefault()
+      if (!this.point) {
+        return
+      }
 
-    const left = state.left + x
-    const top = state.top + y
-    const { width, height } = state
-    if (Util.isRotation(state.rotate)) {
-      if (left >= (height - width) / 2 || left <= this.boxWidth - (height + width) / 2) {
-        x = 0
+      const state = this.state
+      let x, y
+      x = moveStatus.x - this.point[0]
+      y = moveStatus.y - this.point[1]
+      this.point = [moveStatus.x, moveStatus.y]
+      const left = state.left + x
+      const top = state.top + y
+      const { width, height } = state
+      if (Util.isRotation(state.rotate)) {
+        if (left >= (height - width) / 2 || left <= this.boxWidth - (height + width) / 2) {
+          x = 0
+        }
+        if (top >= (width - height) / 2 || top <= this.boxHeight - (width + height) / 2) {
+          y = 0
+        }
+      } else {
+        if (left >= 0 || left <= this.boxWidth - state.width) {
+          x = 0
+        }
+        if (top >= 0 || top <= this.boxHeight - state.height) {
+          y = 0
+        }
       }
-      if (top >= (width - height) / 2 || top <= this.boxHeight - (width + height) / 2) {
-        y = 0
-      }
+
+      this.setState({
+        top: state.top + y,
+        left: state.left + x
+      })
     } else {
-      if (left >= 0 || left <= this.boxWidth - state.width) {
-        x = 0
+      Util.stopDefault(e)
+      if (!this.point) {
+        return
       }
-      if (top >= 0 || top <= this.boxHeight - state.height) {
-        y = 0
-      }
-    }
+      const event = e || window.event
+      const state = this.state
+      let x, y
+      x = (event.pageX || event.clientX) - this.point[0]
+      y = (event.pageY || event.clientY) - this.point[1]
+      this.point = [event.pageX || event.clientX, event.pageY || event.clientY]
 
-    this.setState({
-      top: state.top + y,
-      left: state.left + x
-    })
+      const left = state.left + x
+      const top = state.top + y
+      const { width, height } = state
+      if (Util.isRotation(state.rotate)) {
+        if (left >= (height - width) / 2 || left <= this.boxWidth - (height + width) / 2) {
+          x = 0
+        }
+        if (top >= (width - height) / 2 || top <= this.boxHeight - (width + height) / 2) {
+          y = 0
+        }
+      } else {
+        if (left >= 0 || left <= this.boxWidth - state.width) {
+          x = 0
+        }
+        if (top >= 0 || top <= this.boxHeight - state.height) {
+          y = 0
+        }
+      }
+
+      this.setState({
+        top: state.top + y,
+        left: state.left + x
+      })
+    }
   }
 
   handleMouseOver = () => {
@@ -399,6 +455,7 @@ class Gallery extends Component {
       this.play()
     }
   }
+
   loadImage = src => {
     const img = new window.Image()
     const that = this
@@ -412,6 +469,8 @@ class Gallery extends Component {
         maxZoomSize
       }, box)
       const ratio = width / this.width
+      // 缓存初始化比例，滑动上下页时做判断
+      this.cacheRatio = ratio
       that.imageWidth = this.width
       that.imageHeight = this.height
       that.setState({
@@ -476,12 +535,12 @@ class Gallery extends Component {
     }
   }
 
-  handleMobileZoom = (out = false, ratio) => {
-    const { width, rotate } = this.state
-    const { zoomStep, minZoomSize, maxZoomSize } = this.props
-    // const ratio = Util.divide(width, this.imageWidth)
-    if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
-      const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
+  // todo: 优化
+  handleMobileZoom = (ratio) => {
+    const { rotate } = this.state
+    const { minZoomSize, maxZoomSize } = this.props
+    if (ratio >= minZoomSize || ratio <= maxZoomSize) {
+      const r = ratio * Number(this.cacheRatio)
       const w = this.imageWidth * r
       const h = this.imageHeight * r
       const box = this.imageBox
@@ -496,6 +555,7 @@ class Gallery extends Component {
         ratio: r
       })
     } else {
+      // todo: 修改逻辑
       if (out) {
         this.setState({
           disableZoomOut: true
@@ -695,17 +755,32 @@ class Gallery extends Component {
           style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
           <Gesture
             enablePinch
+            onPinchStart={(e) => {
+              this.cacheRatio = Util.divide(this.state.width, this.imageWidth) || 1
+            }}
             onPinchIn={(e) => {
-              this.handleMobileZoom(false, e.scale) }
-            }
+              this.handleMobileZoom(e.scale)
+            }}
             onPinchOut={(e) => {
-              this.handleMobileZoom(true, e.scale) }
-            }
+              this.handleMobileZoom(e.scale)
+            }}
             onSwipeLeft={() => {
-              this.handlePrev()
+              // todo: 如果ratio 和初始的不一样，那么才能下一页
+              if (this.state.ratio <= this.cacheRatio) {
+                this.handlePrev()
+              }
             }}
             onSwipeRight={() => {
-              this.handleNext()
+              if (this.state.ratio <= this.cacheRatio) {
+                this.handleNext()
+              }
+            }}
+            onPanStart={(e) => {
+              this.handleMoveStart(e)
+            }}
+            onPanMove={(e) => {
+              // this.handleMobileMove(e)
+              this.handleMove(e)
             }}
           >
             <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />

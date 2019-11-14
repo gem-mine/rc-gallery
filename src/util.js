@@ -2,6 +2,15 @@
  * 一些辅助工具函数
  */
 let scrollBarCached
+// 缓存body原有的样式属性
+let originPosition;
+let originWidth;
+let originTop;
+// body是否已设置成fixed阻止滚动
+let fixed = false
+
+export const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
+export const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase())
 
 export default {
   getPosition ({ width, height, minZoomSize, maxZoomSize }, box) {
@@ -69,12 +78,13 @@ export default {
         left = (boxWidth - width) / 2
       }
     } else {
-      if (width > boxWidth) {
+      // 移动端缩放超过屏幕时缩放原点不在[0, 0]
+      if (width > boxWidth && !isMobile) {
         left = 0
       } else {
         left = (boxWidth - width) / 2
       }
-      if (height > boxHeight) {
+      if (height > boxHeight && !isMobile) {
         top = 0
       } else {
         top = (boxHeight - height) / 2
@@ -87,14 +97,14 @@ export default {
     }
   },
 
-  isInside (e, box) {
+  isInside ({ x, y }, box) {
     if (!box) {
       return false
     }
     const rect = box.getBoundingClientRect()
-    const x = e.clientX - document.body.offsetLeft
-    const y = e.clientY - document.body.offsetTop
-    if (x > rect.left && x < rect.right && y > rect.top && y < rect.bottom) {
+    const cX = x - document.body.offsetLeft
+    const cY = y - document.body.offsetTop
+    if (cX > rect.left && cX < rect.right && cY > rect.top && cY < rect.bottom) {
       return true
     }
     return false
@@ -201,5 +211,28 @@ export default {
     } else {
       event.returnValue = false
     }
+  },
+
+  fixedBody () {
+    if (!fixed) { // 避免重复设置造成Body原属性获取失败
+      const { position, width, top } = document.body.style
+      originPosition = position
+      originWidth = width
+      originTop = top
+      const scrollTop = document.body.scrollTop || document.documentElement.scrollTop
+      document.body.style.position = 'fixed'
+      document.body.style.width = '100%'
+      document.body.style.top = `-${scrollTop}px`
+      fixed = true
+    }
+  },
+
+  looseBody () {
+    const body = document.body
+    body.style.position = originPosition
+    body.style.width = originWidth
+    window.scrollTo(0, -parseInt(body.style.top || '0', 10));
+    body.style.top = originTop;
+    fixed = false;
   }
 }
