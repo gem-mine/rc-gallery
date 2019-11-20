@@ -8,6 +8,7 @@ import Footer from './Footer'
 import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
+import Gesture from 'rc-gesture'
 
 const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 
@@ -278,6 +279,7 @@ class Gallery extends Component {
     e.preventDefault()
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
+      console.log(box)
       if (Util.isInside(e, box) && e.deltaY !== 0) {
         const { mouseZoomDirection } = this.props
         this.handleZoom(mouseZoomDirection(e))
@@ -302,6 +304,7 @@ class Gallery extends Component {
   }
 
   jumpTo = (index) => {
+    // todo： 需要修改transform值
     const count = this.props.images.length - 1
 
     let nextIndex = index
@@ -582,7 +585,83 @@ class Gallery extends Component {
   setThumbnailScroll (thumbnailScroll) {
     this.setState({ thumbnailScroll })
   }
+  onSwipe = (status) => {
+    console.log(status)
+    if (status.direction === 2) {
+      this.handlePrev()
+    } else if (status.direction === 4) {
+      this.handleNext()
+    }
+  }
+  onPan = (() => {
+    let lastOffset = 0
+    let finalOffset = 0
 
+    const getLastOffset = () => {
+      let offset = +`${lastOffset}`.replace('%', '')
+      if (`${lastOffset}`.indexOf('%') >= 0) {
+        offset /= 100
+        offset *= this.layout.clientWidth
+      }
+      return offset
+    }
+
+    return {
+      onPanStart: () => {
+        this.setState({
+          isMoving: true
+        });
+      },
+
+      onPanMove: (status) => {
+        let offset = getLastOffset()
+        offset += status.moveStatus.x
+
+        const canScrollOffset = -this.layout.scrollWidth + this.layout.clientWidth
+        offset = Math.min(offset, 0)
+        offset = Math.max(offset, canScrollOffset)
+        this.layout.style.transform = `translate3d(${offset}px, 0px, 0px)`
+        finalOffset = offset
+      },
+
+      onPanEnd: () => {
+        lastOffset = finalOffset
+        const offsetIndex = this.getOffsetIndex(finalOffset, this.layout.clientWidth)
+        this.setState({
+          isMoving: false
+        })
+        if (offsetIndex === this.state.currentIndex) {
+          this.layout.style.transform = this.getContentPosByIndex(offsetIndex)
+        } else {
+          this.jumpTo(offsetIndex)
+        }
+      },
+
+      setCurrentOffset: (offset) => { lastOffset = offset }
+    }
+  })();
+
+  getContentPosByIndex (index) {
+    const value = `${-index * 100}%`
+    this.onPan.setCurrentOffset(value)
+
+    const translate = `${value}, 0px`
+    // fix: content overlay TabBar on iOS 10. ( 0px -> 1px )
+    return `translate3d(${translate}, 1px)`
+  }
+  getOffsetIndex = (current, width, threshold = this.props.images.length || 0) => {
+    const ratio = Math.abs(current / width)
+    const direction = ratio > this.state.currentIndex ? '<' : '>'
+    const index = Math.floor(ratio)
+    switch (direction) {
+      case '<':
+        return ratio - index > threshold ? index + 1 : index;
+      case '>':
+        return 1 - ratio + index > threshold ? index : index + 1;
+      default:
+        return Math.round(ratio)
+    }
+  }
   render () {
     const {
       prefixCls,
@@ -647,23 +726,38 @@ class Gallery extends Component {
           thumbnailScrollDuration={this.thumbnailScrollDuration} />
       )
     }
-
     return (
       <div className={classNames(prefixCls, {
         [`${prefixCls}-inline`]: displayMode === 'inline'
       })}>
-        <div
-          className={`${prefixCls}-content`}
-          style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
-          <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
-          <span onClick={this.handleClose} className={`${prefixCls}-close`}>
-            {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
-          </span>
-          {toolbar}
-          {prev}
-          {next}
-          <Footer {...this.props} {...this.state} />
-        </div>
+        <Gesture onSwipe={this.onSwipe} {...this.onPan}>
+          <div
+            className={`${prefixCls}-content`}
+            style={{
+              bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0'
+            }}>
+            <div
+              ref={(node) => { this.layout = node }}
+              style={{
+                transform: 'translate3d(0%, 0px, 1px)',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'row' }}>
+              {this.props.images.map((i, index) => {
+                return (
+                  <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
+                )
+              })}
+            </div>
+            <span onClick={this.handleClose} className={`${prefixCls}-close`}>
+              {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
+            </span>
+            {toolbar}
+            {prev}
+            {next}
+            <Footer {...this.props} {...this.state} />
+          </div>
+        </Gesture>
         {thumbnail}
       </div>
     )

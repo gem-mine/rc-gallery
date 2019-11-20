@@ -43,7 +43,7 @@ npm run site
 import "rc-gallery/lib/style/";
 import Gallery from 'rc-gallery'
 
-const imageOriginal = [
+const images = [
       {
         original: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5.jpg',
         thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
@@ -67,7 +67,6 @@ const imageOriginal = [
         thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
       }
     ]
-const images = [...imageOriginal, ...imageOriginal, ...imageOriginal, ...imageOriginal]
 
 class App extends React.Component {
   state = {
@@ -88,8 +87,6 @@ class App extends React.Component {
     if (this.state.isGallery) {
       gallery = (
         <Gallery
-          maxZoomSize={1}
-          minZoomSize={0.9}
           zoomStep={0.4}
           images={images}
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}

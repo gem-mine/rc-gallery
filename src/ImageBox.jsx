@@ -51,21 +51,6 @@ export default class extends Component {
       }
     } else {
       const inline = { width, height, top, left, transform: `rotate(${rotate}deg)`, msTransform: `rotate(${rotate}deg)` }
-
-      if (IS_IE8) {
-        const radians = parseInt(rotate) * Math.PI * 2 / 360
-        const costheta = Math.cos(radians)
-        const sintheta = Math.sin(radians)
-        const negsintheta = sintheta * -1
-        inline.filter = `progid:DXImageTransform.Microsoft.Matrix(sizingMethod='auto expand', M11=${costheta}, M12=${negsintheta}, M21=${sintheta}, M22=${costheta})`
-
-        // ie8旋转原点问题
-        if ((rotate / 90 % 2) !== 0) {
-          inline.top = inline.top + ((height - width) / 2)
-          inline.left = inline.left + ((width - height) / 2)
-        }
-      }
-
       contentComponent = <img ref={node => { this.imageRef = node }} src={src} style={inline} />
     }
     return (
