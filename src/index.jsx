@@ -1,7 +1,7 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import ReactDOM from 'react-dom'
-import Util from './util'
+import Util, { isMac } from './util'
 import Toolbar from './Toolbar'
 import ImageBox from './ImageBox'
 import Footer from './Footer'
@@ -9,8 +9,6 @@ import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
 import Gesture from 'rc-gesture'
-
-const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 
 class Gallery extends Component {
   static propTypes = {
@@ -24,7 +22,7 @@ class Gallery extends Component {
     infinite: PropTypes.bool,
     showThumbnail: PropTypes.bool,
     keymap: PropTypes.bool,
-    src: PropTypes.string,
+    currentSrc: PropTypes.string,
     onClose: PropTypes.func,
     onMovePrev: PropTypes.func,
     onMoveNext: PropTypes.func,
@@ -52,7 +50,7 @@ class Gallery extends Component {
         description: null
       }
     ],
-    src: undefined,
+    currentSrc: undefined,
     showToolbar: true,
     toolbarConfig: {
       autoPlay: true,
@@ -81,7 +79,7 @@ class Gallery extends Component {
 
   state = {
     currentIndex: 0,
-    src: undefined,
+    currentSrc: undefined,
     loading: true,
     error: false,
     width: 0,
@@ -108,15 +106,15 @@ class Gallery extends Component {
       currentIndex = props.startIndex
     }
 
-    let src = props.src
+    let currentSrc = props.currentSrc
     props.images.some((v, i) => {
-      if (v.original === src) {
+      if (v.original === currentSrc) {
         currentIndex = i
         return true
       }
     })
-    src = props.images[currentIndex].original
-    this.state.src = src
+    currentSrc = props.images[currentIndex].original
+    this.state.currentSrc = currentSrc
     this.state.showThumbnail = props.showThumbnail
 
     this.state.currentIndex = currentIndex
@@ -161,15 +159,15 @@ class Gallery extends Component {
 
       if (mouseWheelZoom) {
         // 鼠标滚轮缩放事件
-        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.addEvent(this.image, 'wheel', this.handleWheel)
+        // Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        // Util.addEvent(this.image, 'wheel', this.handleWheel)
       }
     }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
     this.updateThumbnailScroll(this.state.currentIndex)
-    this.loadImage(this.state.src)
+    // this.loadImage(this.state.currentSrc)
   }
 
   componentWillUnmount () {
@@ -279,7 +277,6 @@ class Gallery extends Component {
     e.preventDefault()
     if (!this.state.error) {
       const box = this.imageBoxRef.imageRef || null
-      console.log(box)
       if (Util.isInside(e, box) && e.deltaY !== 0) {
         const { mouseZoomDirection } = this.props
         this.handleZoom(mouseZoomDirection(e))
@@ -396,7 +393,7 @@ class Gallery extends Component {
       this.play()
     }
   }
-  loadImage = src => {
+  loadImage = currentSrc => {
     const img = new window.Image()
     const that = this
     const { minZoomSize, maxZoomSize } = this.props
@@ -422,7 +419,7 @@ class Gallery extends Component {
         height,
         top,
         left,
-        src
+        currentSrc
       })
       if (that.props.onImageLoad) {
         that.props.onImageLoad()
@@ -432,13 +429,12 @@ class Gallery extends Component {
       this.setState({
         loading: false,
         error: true,
-        src
+        currentSrc
       })
       if (that.props.onImageLoadError) {
         that.props.onImageLoadError()
       }
     }
-    img.src = src // ie8不触发onLoad问题
   }
 
   handleZoom = (out = false) => {
@@ -586,7 +582,6 @@ class Gallery extends Component {
     this.setState({ thumbnailScroll })
   }
   onSwipe = (status) => {
-    console.log(status)
     if (status.direction === 2) {
       this.handlePrev()
     } else if (status.direction === 4) {
@@ -743,9 +738,9 @@ class Gallery extends Component {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'row' }}>
-              {this.props.images.map((i, index) => {
+              {this.props.images.map((item, index) => {
                 return (
-                  <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
+                  <ImageBox key={index} ref={(node) => { this.imageBoxRef = node }} src={item.original} {...this.props} {...this.state} />
                 )
               })}
             </div>

@@ -2,7 +2,7 @@
  * 一些辅助工具函数
  */
 let scrollBarCached
-
+export const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 export default {
   getPosition ({ width, height, minZoomSize, maxZoomSize }, box) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
@@ -10,7 +10,7 @@ export default {
     let w, h
     if (width > boxWidth) {
       if (height > boxHeight) {
-        // 如果图片宽高大于容器，取取图片宽或高将容器一边填满
+        // 如果图片宽高大于容器，取图片宽或高将容器一边填满
         const r1 = width / boxWidth
         const r2 = height / boxHeight
         if (r1 > r2) {
@@ -28,7 +28,6 @@ export default {
         w = width
       }
     }
-
     // 设置了最小缩放比例时，如果计算的宽高小于它，那么使用设置的最小缩放比例
     if (minZoomSize && (w / width) < minZoomSize) {
       w = width * minZoomSize
