@@ -55,6 +55,7 @@ export default {
   },
   getZoomOffset ({ width, height }, box, rotate = false) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
+
     let top, left
     if (rotate) {
       if (width > boxHeight) {
@@ -86,6 +87,12 @@ export default {
     }
   },
 
+  getZoomPos () {
+    // todo：如果小于视口的宽高的情况下
+    // left: 50; top: 50;translateX(-50%) translateY(-50%)
+    // 如果大于的情况下
+  },
+
   isInside (e, box) {
     if (!box) {
       return false
@@ -107,7 +114,7 @@ export default {
     const n = parseInt(this.divide(v, zoomStep), 10)
     if (out) {
       // 缩小
-      return Math.max(minZoomSize, (n - 1) * zoomStep)
+      return Math.max(minZoomSize, this.multiple(n - 1, zoomStep))
     } else {
       // 放大
       return Math.min(maxZoomSize, this.multiple(n + 1, zoomStep))
@@ -217,5 +224,12 @@ export default {
     mat && transArr.push(parseFloat(mat[1].split(', ')[4]))
     mat && transArr.push(parseFloat(mat[1].split(', ')[5]))
     return transArr
+  }
+}
+export function getTransformPropValue (v) {
+  return {
+    transform: v,
+    WebkitTransform: v,
+    MozTransform: v
   }
 }

@@ -289,7 +289,6 @@ class Gallery extends Component {
   }
 
   jumpTo = (index) => {
-    // todo： 需要修改transform值
     const count = this.props.images.length - 1
 
     let nextIndex = index
@@ -717,6 +716,7 @@ class Gallery extends Component {
                 return (
                   <ImageBox
                     key={index}
+                    index={index}
                     src={item.original}
                     handleTogglePlay={this.handleTogglePlay}
                     play={this.play}
