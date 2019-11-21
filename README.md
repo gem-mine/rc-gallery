@@ -89,6 +89,7 @@ class App extends React.Component {
         <Gallery
           zoomStep={0.4}
           images={images}
+          infinite
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}
           onClose={this.closeGallery} />
       )

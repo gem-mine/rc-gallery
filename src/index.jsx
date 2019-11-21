@@ -145,13 +145,13 @@ class Gallery extends Component {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
 
-    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
-    if (this.imageBoxRef.imageRef) {
-      this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-      // 鼠标移入图片内时停止自动播放
-      Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
-      Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
-    }
+    // this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
+    // if (this.imageBoxRef.imageRef) {
+    //   this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
+    //   // 鼠标移入图片内时停止自动播放
+    //   Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
+    //   Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
+    // }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
@@ -159,29 +159,29 @@ class Gallery extends Component {
   }
 
   componentWillUnmount () {
-    const { mouseWheelZoom } = this.props
-
-    Util.removeEvent(window, 'resize', this.handleResize)
-
-    // Util.removeEvent(document, 'mousewheel', this.handleWheel)
-    Util.removeEvent(document, 'wheel', this.handleWheel)
-    if (this.props.keymap) {
-      Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
-    }
-    if (this.imageBoxRef.imageRef) {
-      this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-      Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
-      Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
-
-      Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.removeEvent(this.image, 'mousemove', this.handleMove)
-      Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
-
-      if (mouseWheelZoom) {
-        Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.removeEvent(this.image, 'wheel', this.handleWheel)
-      }
-    }
+    // const { mouseWheelZoom } = this.props
+    //
+    // Util.removeEvent(window, 'resize', this.handleResize)
+    //
+    // // Util.removeEvent(document, 'mousewheel', this.handleWheel)
+    // Util.removeEvent(document, 'wheel', this.handleWheel)
+    // if (this.props.keymap) {
+    //   Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
+    // }
+    // if (this.imageBoxRef.imageRef) {
+    //   this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
+    //   Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
+    //   Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
+    //
+    //   Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
+    //   Util.removeEvent(this.image, 'mousemove', this.handleMove)
+    //   Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
+    //
+    //   if (mouseWheelZoom) {
+    //     Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+    //     Util.removeEvent(this.image, 'wheel', this.handleWheel)
+    //   }
+    // }
     // 清除自动播放定时器
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
@@ -457,20 +457,20 @@ class Gallery extends Component {
     }
   }
 
-  handleRotate = angle => {
-    const rotate = this.state.rotate + angle
-    const box = this.imageBox
-    const { top, left } = Util.getZoomOffset(
-      { width: this.state.width, height: this.state.height },
-      box,
-      Util.isRotation(rotate)
-    )
-    this.setState({
-      rotate,
-      top,
-      left
-    })
-  }
+  // handleRotate = angle => {
+  //   const rotate = this.state.rotate + angle
+  //   const box = this.imageBox
+  //   const { top, left } = Util.getZoomOffset(
+  //     { width: this.state.width, height: this.state.height },
+  //     box,
+  //     Util.isRotation(rotate)
+  //   )
+  //   this.setState({
+  //     rotate,
+  //     top,
+  //     left
+  //   })
+  // }
 
   canSlideLeft () {
     return this.props.infinite || this.state.currentIndex > 0
@@ -648,7 +648,6 @@ class Gallery extends Component {
   render () {
     const {
       prefixCls,
-      showToolbar,
       showThumbnail,
       images,
       closeIcon,
@@ -679,18 +678,6 @@ class Gallery extends Component {
         <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
           { nextIcon || <i className="anticon anticon-right" /> }
         </div>
-      )
-    }
-
-    let toolbar = null
-    if (showToolbar) {
-      toolbar = (
-        <Toolbar
-          {...this.props}
-          {...this.state}
-          handleZoom={this.handleZoom}
-          handleRotate={this.handleRotate}
-          handleTogglePlay={this.handleTogglePlay} />
       )
     }
 
@@ -728,14 +715,20 @@ class Gallery extends Component {
                 flexDirection: 'row' }}>
               {this.props.images.map((item, index) => {
                 return (
-                  <ImageBox key={index} ref={(node) => { this.imageBoxRef = node }} src={item.original} {...this.props} {...this.state} />
+                  <ImageBox
+                    key={index}
+                    src={item.original}
+                    handleTogglePlay={this.handleTogglePlay}
+                    play={this.play}
+                    pause={this.pause}
+                    {...this.props}
+                    {...this.state} />
                 )
               })}
             </div>
             <span onClick={this.handleClose} className={`${prefixCls}-close`}>
               {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
             </span>
-            {toolbar}
             {prev}
             {next}
             <Footer {...this.props} {...this.state} />

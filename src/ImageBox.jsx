@@ -2,11 +2,13 @@ import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Util, { isMac } from './util'
 import ReactDOM from 'react-dom'
+import Toolbar from './Toolbar'
 
 export default class extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
     error: PropTypes.bool,
+    showToolbar: PropTypes.bool,
     rotate: PropTypes.number,
     src: PropTypes.string,
     spinClass: PropTypes.object,
@@ -16,6 +18,9 @@ export default class extends Component {
     minZoomSize: PropTypes.number,
     onImageLoad: PropTypes.func,
     onImageLoadError: PropTypes.func,
+    play: PropTypes.func,
+    pause: PropTypes.func,
+    handleTogglePlay: PropTypes.func,
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -51,6 +56,7 @@ export default class extends Component {
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
+  // todo: 懒加载能力
   componentDidMount () {
     this.image = ReactDOM.findDOMNode(this.imageRef)
     if (this.image) {
@@ -59,6 +65,10 @@ export default class extends Component {
         Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
         Util.addEvent(this.image, 'wheel', this.handleWheel)
       }
+      // 鼠标移入图片内时停止自动播放
+      Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
+      Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
+
       // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
       Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
       Util.addEvent(this.image, 'mousemove', this.handleMove)
@@ -112,10 +122,19 @@ export default class extends Component {
   handleMoveEnd = () => {
     this.point = null
   }
+
+  handleMouseOver = () => {
+    const { isPlaying } = this.state
+    this.isPlayingBefore = isPlaying
+    if (isPlaying) {
+      this.props.pause()
+    }
+  }
+
   handleMouseOut = () => {
     this.point = null // inline模式时鼠标图片拖拽鼠标移动到图片外问题
     if (this.isPlayingBefore) {
-      this.play()
+      this.props.play()
     }
   }
 
@@ -159,7 +178,6 @@ export default class extends Component {
     }
   }
 
-  // todo： 错误处理
   onError = () => {
     this.setState({
       loading: false,
@@ -168,6 +186,11 @@ export default class extends Component {
     if (this.props.onImageLoadError) {
       this.props.onImageLoadError()
     }
+  }
+
+  handleRotate = angle => {
+    const rotate = this.state.rotate + angle
+    this.setState({ rotate })
   }
 
   handleZoom = (out = false) => {
@@ -199,7 +222,7 @@ export default class extends Component {
   }
 
   render () {
-    const { prefixCls, spinClass, error, rotate, src } = this.props
+    const { prefixCls, spinClass, error, src, showToolbar } = this.props
     const { loading, top, left } = this.state
     let loadingComponent = null
     let contentComponent = null
@@ -226,9 +249,9 @@ export default class extends Component {
         top,
         left,
         transform:
-          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio})`,
+          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`,
         msTransform:
-          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio})`
+          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
@@ -237,8 +260,22 @@ export default class extends Component {
         onError={this.onError}
         onLoad={this.onLoad} />
     }
+
+    let toolbar = null
+    if (showToolbar) {
+      toolbar = (
+        <Toolbar
+          {...this.props}
+          {...this.state}
+          handleZoom={this.handleZoom}
+          handleRotate={this.handleRotate}
+          handleTogglePlay={this.props.handleTogglePlay} />
+      )
+    }
+
     return (
       <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
+        {toolbar}
         {loadingComponent}
         {contentComponent}
       </div>
