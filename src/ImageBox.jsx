@@ -50,6 +50,7 @@ export default class extends Component {
   // todo: 缩放没超过全屏的时候不能拖拽
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
+  // todo: 缩放拖拽后缩小时要居中
   componentDidMount () {
     this.image = ReactDOM.findDOMNode(this.imageRef)
     if (this.image) {
@@ -75,30 +76,53 @@ export default class extends Component {
       return
     }
     this.point = [e.pageX || e.clientX, e.pageY || e.clientX]
+    const box = this.imageBoxRef
+    this.imageBoxWidth = box.offsetWidth
+    this.imageBoxHeight = box.offsetHeight
   }
+  // todo: 根据缩放程度判断拖拽范围
   handleMove = (e) => {
     e.preventDefault()
     if (!this.point) {
       return
     }
-    const xDelta = e.pageX - this.point[0]
-    const yDelta = e.pageY - this.point[1]
+    let xDelta = e.pageX - this.point[0]
+    let yDelta = e.pageY - this.point[1]
+
     this.point = [e.pageX, e.pageY]
     const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
+
+    // 没有旋转的情况
+    const { left, top, right, bottom } = this.imageRef.getBoundingClientRect()
+    const { width: boxWidth, height: boxHeight } = this.imageBoxRef.getBoundingClientRect()
+    if ((left + xDelta >= 0) || (right + xDelta <= boxWidth)) {
+      xDelta = 0
+    }
+    if ((top + yDelta >= 0) || (bottom + yDelta <= boxHeight)) {
+      yDelta = 0
+    }
+    // todo: 有旋转的情况
+
     this.setState({
       translateX: x + xDelta,
       translateY: y + yDelta
     })
   }
+
   handleMoveEnd = () => {
     this.point = null
+  }
+  handleMouseOut = () => {
+    this.point = null // inline模式时鼠标图片拖拽鼠标移动到图片外问题
+    if (this.isPlayingBefore) {
+      this.play()
+    }
   }
 
   onLoad = e => {
     const { minZoomSize, maxZoomSize, src } = this.props
     const imageBox = this.imageBoxRef
     const imageEle = this.imageRef
-    console.log(imageEle)
     const { width, height, top, left } = Util.getPosition({
       width: imageEle.width,
       height: imageEle.height,
