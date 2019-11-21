@@ -38,28 +38,59 @@ export default class extends Component {
       return isMac ? e.deltaY < 0 : e.deltaY > 0
     }
   }
+
   state = {
     error: false,
     loading: true,
     width: 0,
     height: 0,
     top: 0,
-    left: 0
+    left: 0,
+    translateX: 0,
+    translateY: 0
   }
   // todo: mousewheel事件等放到这里绑定
   componentDidMount () {
     this.image = ReactDOM.findDOMNode(this.imageRef)
     if (this.props.mouseWheelZoom) {
+      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
+      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
+      Util.addEvent(this.image, 'mousemove', this.handleMove)
+      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
       // 鼠标滚轮缩放事件
       Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
       Util.addEvent(this.image, 'wheel', this.handleWheel)
     }
   }
 
-  // todo: 加载图片
+  handleMoveStart = (e) => {
+    e.preventDefault()
+    if (e.button !== 0) {
+      return
+    }
+    this.point = [e.pageX, e.pageY]
+  }
+  handleMove = (e) => {
+    e.preventDefault()
+    if (!this.point) {
+      return
+    }
+    const xDelta = e.pageX - this.point[0]
+    const yDelta = e.pageY - this.point[1]
+    this.point = [e.pageX, e.pageY]
+    const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
+    this.setState({
+      translateX: x + xDelta,
+      translateY: y + yDelta
+    })
+  }
+  handleMoveEnd = () => {
+    this.point = null
+  }
+
   onLoad = e => {
     const { minZoomSize, maxZoomSize, src } = this.props
-    const imageBox = this.imageBox
+    const imageBox = this.imageBoxRef
     const imageEle = e.target
 
     const { width, height, top, left } = Util.getPosition({
@@ -111,7 +142,6 @@ export default class extends Component {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
       const w = this.imageWidth * r
       const h = this.imageHeight * r
-      this.imageRef.style.transform = `scale(${r})`
       this.setState({
         width: w,
         height: h,
@@ -155,7 +185,14 @@ export default class extends Component {
         )
       }
     } else {
-      const inline = { top, left, transform: `rotate(${rotate}deg)`, msTransform: `rotate(${rotate}deg)` }
+      const inline = {
+        top,
+        left,
+        transform:
+          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio})`,
+        msTransform:
+          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio})`
+      }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
         src={src}
@@ -164,7 +201,7 @@ export default class extends Component {
         onLoad={this.onLoad} />
     }
     return (
-      <div ref={node => { this.imageBox = node }} className={`${prefixCls}-image`}>
+      <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
         {contentComponent}
         {loadingComponent}
       </div>

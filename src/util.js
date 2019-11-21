@@ -200,5 +200,22 @@ export default {
     } else {
       event.returnValue = false
     }
+  },
+
+  getComputedTranslateXY (obj) {
+    const transArr = []
+    if (!window.getComputedStyle) {
+      return
+    }
+    const style = window.getComputedStyle(obj)
+    const transform = style.transform || style.webkitTransform || style.mozTransform
+    let mat = transform.match(/^matrix3d\((.+)\)$/)
+    if (mat) {
+      return parseFloat(mat[1].split(', ')[13])
+    }
+    mat = transform.match(/^matrix\((.+)\)$/)
+    mat && transArr.push(parseFloat(mat[1].split(', ')[4]))
+    mat && transArr.push(parseFloat(mat[1].split(', ')[5]))
+    return transArr
   }
 }
