@@ -50,9 +50,9 @@ export default class extends Component {
     top: 0,
     left: 0,
     translateX: 0,
-    translateY: 0
+    translateY: 0,
+    ratio: 1
   }
-  // todo: 缩放没超过全屏的时候不能拖拽
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
@@ -73,6 +73,10 @@ export default class extends Component {
       Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
       Util.addEvent(this.image, 'mousemove', this.handleMove)
       Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
+    }
+    const { currentSrc, src } = this.props
+    if (currentSrc === src) {
+      this.setState({ src: currentSrc })
     }
   }
 
@@ -196,18 +200,23 @@ export default class extends Component {
   handleZoom = (out = false) => {
     const { zoomStep, minZoomSize, maxZoomSize } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
+    const imageBoxRect = this.imageBoxRef.getBoundingClientRect()
     const ratio = imageRect.width / this.imageWidth
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
-      const w = this.imageWidth * r
-      const h = this.imageHeight * r
+      // const offset = Util.getZoomOffset({ width: w, height: h }, this.imageBoxRef, Util.isRotation(this.state.rotate))
+      // 如果图片的宽度大于容器的宽度，那么translateX 图片left距离左边框的距离
+      // todo：如果宽度大于box宽度，需要居中
       this.setState({
-        width: w,
-        height: h,
-        disableZoomOut: r <= minZoomSize,
-        disableZoomIn: r >= maxZoomSize,
+        // top: offset.top,
+        // left: offset.left,
+        // translateX: imageRect.width > imageBoxRect.width ? `${-imageRect.left}px` : 0,
+        // translateY: imageRect.height > imageBoxRect.height ? `${-imageRect.top}px` : 0,
+        // disableZoomOut: r <= minZoomSize,
+        // disableZoomIn: r >= maxZoomSize,
         ratio: r
       })
+      console.log(r * imageRect.width)
     } else {
       if (out) {
         this.setState({
@@ -221,9 +230,18 @@ export default class extends Component {
     }
   }
 
+  // todo: 懒加载优化
+  componentDidUpdate (prevProps) {
+    if (prevProps.currentIndex !== this.props.currentIndex) {
+      if (this.props.index === this.props.currentIndex) {
+        this.setState({ src: this.props.images[this.props.currentIndex].original })
+      }
+    }
+  }
+
   render () {
-    const { prefixCls, spinClass, error, src, showToolbar } = this.props
-    const { loading, top, left } = this.state
+    const { prefixCls, spinClass, error, showToolbar } = this.props
+    const { loading, top, left, src } = this.state
     let loadingComponent = null
     let contentComponent = null
 
@@ -244,6 +262,7 @@ export default class extends Component {
         )
       }
     } else {
+      console.log('render: ', this.state.ratio)
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
         top,
