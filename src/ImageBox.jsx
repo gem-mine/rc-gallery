@@ -6,10 +6,7 @@ import ReactDOM from 'react-dom'
 export default class extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
-    loading: PropTypes.bool,
     error: PropTypes.bool,
-    top: PropTypes.number,
-    left: PropTypes.number,
     rotate: PropTypes.number,
     src: PropTypes.string,
     spinClass: PropTypes.object,
@@ -18,6 +15,7 @@ export default class extends Component {
     maxZoomSize: PropTypes.number,
     minZoomSize: PropTypes.number,
     onImageLoad: PropTypes.func,
+    onImageLoadError: PropTypes.func,
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -49,26 +47,34 @@ export default class extends Component {
     translateX: 0,
     translateY: 0
   }
-  // todo: mousewheel事件等放到这里绑定
+  // todo: 缩放没超过全屏的时候不能拖拽
+  // todo: transform优化为一个函数
+  // todo: ie9下无法拖拽
   componentDidMount () {
     this.image = ReactDOM.findDOMNode(this.imageRef)
-    if (this.props.mouseWheelZoom) {
+    if (this.image) {
+      if (this.props.mouseWheelZoom) {
+        // 鼠标滚轮缩放事件
+        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
+        Util.addEvent(this.image, 'wheel', this.handleWheel)
+      }
       // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
       Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
       Util.addEvent(this.image, 'mousemove', this.handleMove)
       Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
-      // 鼠标滚轮缩放事件
-      Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-      Util.addEvent(this.image, 'wheel', this.handleWheel)
     }
   }
 
-  handleMoveStart = (e) => {
+  handleMoveStart = e => {
     e.preventDefault()
-    if (e.button !== 0) {
+    const { button, target } = e
+    if (button !== 0) {
       return
     }
-    this.point = [e.pageX, e.pageY]
+    if (!target || target.tagName.toUpperCase() !== 'IMG') {
+      return
+    }
+    this.point = [e.pageX || e.clientX, e.pageY || e.clientX]
   }
   handleMove = (e) => {
     e.preventDefault()
@@ -91,8 +97,8 @@ export default class extends Component {
   onLoad = e => {
     const { minZoomSize, maxZoomSize, src } = this.props
     const imageBox = this.imageBoxRef
-    const imageEle = e.target
-
+    const imageEle = this.imageRef
+    console.log(imageEle)
     const { width, height, top, left } = Util.getPosition({
       width: imageEle.width,
       height: imageEle.height,
@@ -131,7 +137,13 @@ export default class extends Component {
 
   // todo： 错误处理
   onError = () => {
-    console.log('发生错误')
+    this.setState({
+      loading: false,
+      error: true
+    })
+    if (this.props.onImageLoadError) {
+      this.props.onImageLoadError()
+    }
   }
 
   handleZoom = (out = false) => {
@@ -186,6 +198,7 @@ export default class extends Component {
       }
     } else {
       const inline = {
+        visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
         top,
         left,
         transform:
@@ -202,8 +215,8 @@ export default class extends Component {
     }
     return (
       <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
-        {contentComponent}
         {loadingComponent}
+        {contentComponent}
       </div>
     )
   }

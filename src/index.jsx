@@ -95,7 +95,8 @@ class Gallery extends Component {
     isPlaying: false, // 是否在播放状态 控制toolbar图标
     thumbnailScroll: 0, // 缩略图的位置
     showThumbnail: true, // 是否显示缩略图
-    mouseWheelZoom: true
+    mouseWheelZoom: true,
+    contentPos: 0 // 跳转到第几页对应的translateX位置
   }
 
   constructor (props) {
@@ -130,7 +131,6 @@ class Gallery extends Component {
       autoPlay,
       keymap,
       displayMode,
-      mouseWheelZoom
     } = this.props
 
     Util.addEvent(window, 'resize', this.handleResize)
@@ -151,23 +151,11 @@ class Gallery extends Component {
       // 鼠标移入图片内时停止自动播放
       Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
       Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
-
-      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
-      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.addEvent(this.image, 'mousemove', this.handleMove)
-      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
-
-      if (mouseWheelZoom) {
-        // 鼠标滚轮缩放事件
-        // Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        // Util.addEvent(this.image, 'wheel', this.handleWheel)
-      }
     }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
     this.updateThumbnailScroll(this.state.currentIndex)
-    // this.loadImage(this.state.currentSrc)
   }
 
   componentWillUnmount () {
@@ -313,11 +301,11 @@ class Gallery extends Component {
     if (nextIndex !== this.state.currentIndex) {
       this.setState({
         currentIndex: nextIndex,
+        contentPos: `translateX(${-nextIndex * 100}%)`,
         loading: true,
         disableNext: index >= count && !this.props.infinite,
         disablePrev: index <= 0 && !this.props.infinite
       })
-      this.loadImage(this.props.images[nextIndex].original)
     }
   }
 
@@ -734,7 +722,7 @@ class Gallery extends Component {
             <div
               ref={(node) => { this.layout = node }}
               style={{
-                transform: 'translate3d(0%, 0px, 1px)',
+                transform: this.state.contentPos,
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'row' }}>
