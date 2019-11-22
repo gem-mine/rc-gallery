@@ -652,6 +652,7 @@ class Gallery extends Component {
       closeIcon,
       prevIcon,
       nextIcon,
+      showToolbar,
       displayMode
     } = this.props
 
@@ -677,6 +678,19 @@ class Gallery extends Component {
         <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
           { nextIcon || <i className="anticon anticon-right" /> }
         </div>
+      )
+    }
+
+    // toolbar控制问题
+    let toolbar = null
+    if (showToolbar) {
+      toolbar = (
+        <Toolbar
+          {...this.props}
+          {...this.state}
+          handleZoom={null}
+          handleRotate={null}
+          handleTogglePlay={null} />
       )
     }
 
@@ -731,6 +745,7 @@ class Gallery extends Component {
             </span>
             {prev}
             {next}
+            {toolbar}
             <Footer {...this.props} {...this.state} />
           </div>
         </Gesture>

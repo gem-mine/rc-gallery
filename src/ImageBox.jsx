@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Util, { isMac } from './util'
+import Util, { isMac, getTransformPropValue } from './util'
 import ReactDOM from 'react-dom'
 import Toolbar from './Toolbar'
 
@@ -49,8 +49,8 @@ export default class extends Component {
     height: 0,
     top: 0,
     left: 0,
-    translateX: 0,
-    translateY: 0,
+    translateX: '-50%',
+    translateY: '-50%',
     ratio: 1
   }
   // todo: transform优化为一个函数
@@ -118,8 +118,8 @@ export default class extends Component {
     // todo: 有旋转的情况
 
     this.setState({
-      translateX: x + xDelta,
-      translateY: y + yDelta
+      translateX: `${x + xDelta}px`,
+      translateY: `${y + yDelta}px`
     })
   }
 
@@ -152,7 +152,7 @@ export default class extends Component {
       minZoomSize,
       maxZoomSize
     }, imageBox)
-    // const ratio = width / this.width
+    const ratio = width / imageEle.width
     this.imageWidth = imageEle.width
     this.imageHeight = imageEle.height
     this.setState({
@@ -161,11 +161,11 @@ export default class extends Component {
       rotate: 0,
       // disableZoomOut: ratio <= minZoomSize,
       // disableZoomIn: ratio >= maxZoomSize,
-      // ratio,
-      width,
-      height,
-      top,
-      left,
+      ratio,
+      // width,
+      // height,
+      // top,
+      // left,
       src
     })
     if (this.props.onImageLoad) {
@@ -206,17 +206,19 @@ export default class extends Component {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
       // const offset = Util.getZoomOffset({ width: w, height: h }, this.imageBoxRef, Util.isRotation(this.state.rotate))
       // 如果图片的宽度大于容器的宽度，那么translateX 图片left距离左边框的距离
-      // todo：如果宽度大于box宽度，需要居中
+      // todo：如果宽度大于box宽度，需要居中   看下handleMove
+      const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
       this.setState({
         // top: offset.top,
         // left: offset.left,
-        // translateX: imageRect.width > imageBoxRect.width ? `${-imageRect.left}px` : 0,
+        // translateX: (imageRect.width * r > imageBoxRect.width) ? `${-imageRect.left}px` : this.state.translateX,
         // translateY: imageRect.height > imageBoxRect.height ? `${-imageRect.top}px` : 0,
+        translateX: x + 'px',
+        translateY: y + 'px',
         // disableZoomOut: r <= minZoomSize,
         // disableZoomIn: r >= maxZoomSize,
         ratio: r
       })
-      console.log(r * imageRect.width)
     } else {
       if (out) {
         this.setState({
@@ -262,15 +264,11 @@ export default class extends Component {
         )
       }
     } else {
-      console.log('render: ', this.state.ratio)
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        top,
-        left,
-        transform:
-          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`,
-        msTransform:
-          `translateX(${this.state.translateX}px) translateY(${this.state.translateY}px) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`
+        top: '50%',
+        left: '50%',
+        ...(getTransformPropValue(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
@@ -280,21 +278,8 @@ export default class extends Component {
         onLoad={this.onLoad} />
     }
 
-    let toolbar = null
-    if (showToolbar) {
-      toolbar = (
-        <Toolbar
-          {...this.props}
-          {...this.state}
-          handleZoom={this.handleZoom}
-          handleRotate={this.handleRotate}
-          handleTogglePlay={this.props.handleTogglePlay} />
-      )
-    }
-
     return (
       <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
-        {toolbar}
         {loadingComponent}
         {contentComponent}
       </div>
