@@ -233,3 +233,11 @@ export function getTransformPropValue (v) {
     MozTransform: v
   }
 }
+
+export function getTransformCenterXY (v) {
+  return {
+    transform: v,
+    WebkitTransform: v,
+    MozTransform: v
+  }
+}

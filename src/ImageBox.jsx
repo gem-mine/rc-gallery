@@ -9,8 +9,8 @@ export default class extends Component {
     prefixCls: PropTypes.string,
     error: PropTypes.bool,
     showToolbar: PropTypes.bool,
-    rotate: PropTypes.number,
     src: PropTypes.string,
+    currentSrc: PropTypes.string,
     spinClass: PropTypes.object,
     mouseZoomDirection: PropTypes.func,
     zoomStep: PropTypes.number,
@@ -20,7 +20,6 @@ export default class extends Component {
     onImageLoadError: PropTypes.func,
     play: PropTypes.func,
     pause: PropTypes.func,
-    handleTogglePlay: PropTypes.func,
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -47,33 +46,17 @@ export default class extends Component {
     loading: true,
     width: 0,
     height: 0,
-    top: 0,
-    left: 0,
-    translateX: '-50%',
-    translateY: '-50%',
+    top: '50%',
+    left: '50%',
+    translateX: '0',
+    translateY: '0',
     ratio: 1
   }
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
-  // todo: 懒加载能力
   componentDidMount () {
     this.image = ReactDOM.findDOMNode(this.imageRef)
-    if (this.image) {
-      if (this.props.mouseWheelZoom) {
-        // 鼠标滚轮缩放事件
-        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.addEvent(this.image, 'wheel', this.handleWheel)
-      }
-      // 鼠标移入图片内时停止自动播放
-      Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
-      Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
-
-      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
-      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.addEvent(this.image, 'mousemove', this.handleMove)
-      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
-    }
     const { currentSrc, src } = this.props
     if (currentSrc === src) {
       this.setState({ src: currentSrc })
@@ -146,7 +129,7 @@ export default class extends Component {
     const { minZoomSize, maxZoomSize, src } = this.props
     const imageBox = this.imageBoxRef
     const imageEle = this.imageRef
-    const { width, height, top, left } = Util.getPosition({
+    const { width } = Util.getPosition({
       width: imageEle.width,
       height: imageEle.height,
       minZoomSize,
@@ -159,13 +142,9 @@ export default class extends Component {
       loading: false,
       error: false,
       rotate: 0,
-      // disableZoomOut: ratio <= minZoomSize,
-      // disableZoomIn: ratio >= maxZoomSize,
       ratio,
-      // width,
-      // height,
-      // top,
-      // left,
+      translateX: (imageBox.offsetWidth - imageEle.offsetWidth) / 2 + 'px', // 居中 todo： 优化
+      translateY: (imageBox.offsetHeight - imageEle.offsetHeight) / 2 + 'px',
       src
     })
     if (this.props.onImageLoad) {
@@ -173,9 +152,7 @@ export default class extends Component {
     }
   }
 
-  // todo: 控制缩放
   handleWheel = (e) => {
-    e.preventDefault()
     const { mouseZoomDirection } = this.props
     if (!this.state.error) {
       this.handleZoom(mouseZoomDirection(e))
@@ -200,24 +177,14 @@ export default class extends Component {
   handleZoom = (out = false) => {
     const { zoomStep, minZoomSize, maxZoomSize } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
-    const imageBoxRect = this.imageBoxRef.getBoundingClientRect()
     const ratio = imageRect.width / this.imageWidth
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
-      // const offset = Util.getZoomOffset({ width: w, height: h }, this.imageBoxRef, Util.isRotation(this.state.rotate))
-      // 如果图片的宽度大于容器的宽度，那么translateX 图片left距离左边框的距离
-      // todo：如果宽度大于box宽度，需要居中   看下handleMove
-      const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
+      console.log((this.imageRef.offsetWidth - this.imageBoxRef.offsetWidth) / 2, '|', parseInt(this.state.translateX))
       this.setState({
-        // top: offset.top,
-        // left: offset.left,
-        // translateX: (imageRect.width * r > imageBoxRect.width) ? `${-imageRect.left}px` : this.state.translateX,
-        // translateY: imageRect.height > imageBoxRect.height ? `${-imageRect.top}px` : 0,
-        translateX: x + 'px',
-        translateY: y + 'px',
-        // disableZoomOut: r <= minZoomSize,
-        // disableZoomIn: r >= maxZoomSize,
-        ratio: r
+        ratio: r,
+        translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
+        translateY: (this.imageBoxRef.offsetHeight - this.imageRef.offsetHeight) / 2 + 'px'
       })
     } else {
       if (out) {
@@ -265,14 +232,19 @@ export default class extends Component {
       }
     } else {
       const inline = {
+        touchAction: 'none', // todo： 写到样式里
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        top: '50%',
-        left: '50%',
         ...(getTransformPropValue(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
         src={src}
+        onWheel={this.props.mouseWheelZoom ? this.handleWheel : null}
+        onMouseOut={this.handleMouseOut} // 鼠标移入图片内时停止自动播放
+        onMouseOver={this.handleMouseOver}
+        onMouseDown={this.handleMoveStart} // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
+        onMouseMove={this.handleMove}
+        onMouseUp={this.handleMoveEnd}
         style={inline}
         onError={this.onError}
         onLoad={this.onLoad} />
