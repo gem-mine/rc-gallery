@@ -1,14 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Util, { isMac, getTransformPropValue } from './util'
+import Util, { isMac, getTransformComp } from './util'
 import ReactDOM from 'react-dom'
-import Toolbar from './Toolbar'
 
 export default class extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
     error: PropTypes.bool,
-    showToolbar: PropTypes.bool,
+    images: PropTypes.array,
     src: PropTypes.string,
     currentSrc: PropTypes.string,
     spinClass: PropTypes.object,
@@ -20,6 +19,8 @@ export default class extends Component {
     onImageLoadError: PropTypes.func,
     play: PropTypes.func,
     pause: PropTypes.func,
+    currentIndex: PropTypes.number,
+    index: PropTypes.number, // 图片的索引
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -46,8 +47,6 @@ export default class extends Component {
     loading: true,
     width: 0,
     height: 0,
-    top: '50%',
-    left: '50%',
     translateX: '0',
     translateY: '0',
     ratio: 1
@@ -180,7 +179,6 @@ export default class extends Component {
     const ratio = imageRect.width / this.imageWidth
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
-      console.log((this.imageRef.offsetWidth - this.imageBoxRef.offsetWidth) / 2, '|', parseInt(this.state.translateX))
       this.setState({
         ratio: r,
         translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
@@ -200,17 +198,18 @@ export default class extends Component {
   }
 
   // todo: 懒加载优化
+  // todo：每次jumpTo的时候图片的位置和大小需要重置
   componentDidUpdate (prevProps) {
     if (prevProps.currentIndex !== this.props.currentIndex) {
       if (this.props.index === this.props.currentIndex) {
-        this.setState({ src: this.props.images[this.props.currentIndex].original })
+        this.src = this.props.images[this.props.currentIndex].original
       }
     }
   }
 
   render () {
-    const { prefixCls, spinClass, error, showToolbar } = this.props
-    const { loading, top, left, src } = this.state
+    const { prefixCls, spinClass, error } = this.props
+    const { loading } = this.state
     let loadingComponent = null
     let contentComponent = null
 
@@ -232,13 +231,12 @@ export default class extends Component {
       }
     } else {
       const inline = {
-        touchAction: 'none', // todo： 写到样式里
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        ...(getTransformPropValue(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
+        ...(getTransformComp(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
-        src={src}
+        src={this.state.src || this.src}
         onWheel={this.props.mouseWheelZoom ? this.handleWheel : null}
         onMouseOut={this.handleMouseOut} // 鼠标移入图片内时停止自动播放
         onMouseOver={this.handleMouseOver}

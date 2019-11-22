@@ -76,11 +76,11 @@ class Gallery extends Component {
       return isMac ? e.deltaY < 0 : e.deltaY > 0
     }
   }
-
+  imageBoxes = []
   state = {
     currentIndex: 0,
     currentSrc: undefined,
-    loading: true,
+    loading: false,
     error: false,
     width: 0,
     height: 0,
@@ -301,7 +301,7 @@ class Gallery extends Component {
       this.setState({
         currentIndex: nextIndex,
         contentPos: `translateX(${-nextIndex * 100}%)`,
-        loading: true,
+        // loading: true,
         disableNext: index >= count && !this.props.infinite,
         disablePrev: index <= 0 && !this.props.infinite
       })
@@ -396,7 +396,7 @@ class Gallery extends Component {
       that.imageWidth = this.width
       that.imageHeight = this.height
       that.setState({
-        loading: false,
+        // loading: false,
         error: false,
         rotate: 0,
         disableZoomOut: ratio <= minZoomSize,
@@ -414,7 +414,7 @@ class Gallery extends Component {
     }
     img.onerror = () => {
       this.setState({
-        loading: false,
+        // loading: false,
         error: true,
         currentSrc
       })
@@ -688,9 +688,9 @@ class Gallery extends Component {
         <Toolbar
           {...this.props}
           {...this.state}
-          handleZoom={null}
-          handleRotate={null}
-          handleTogglePlay={null} />
+          handleZoom={this.imageBoxes[this.state.currentIndex] ? this.imageBoxes[this.state.currentIndex].handleZoom : null}
+          handleRotate={this.imageBoxes[this.state.currentIndex] ? this.imageBoxes[this.state.currentIndex].handleRotate : null}
+          handleTogglePlay={this.handleTogglePlay} />
       )
     }
 
@@ -732,6 +732,7 @@ class Gallery extends Component {
                     key={index}
                     index={index}
                     src={item.original}
+                    ref={node => { this.imageBoxes[index] = node }}
                     handleTogglePlay={this.handleTogglePlay}
                     play={this.play}
                     pause={this.pause}

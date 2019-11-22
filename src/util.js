@@ -226,7 +226,7 @@ export default {
     return transArr
   }
 }
-export function getTransformPropValue (v) {
+export function getTransformComp (v) {
   return {
     transform: v,
     WebkitTransform: v,
