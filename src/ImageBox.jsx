@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Util, { isMac, getTransformComp } from './util'
+import Util, { isMac, getTransformComp, isMobile } from './util'
 import ReactDOM from 'react-dom'
+import Gesture from 'rc-gesture'
 
 export default class extends Component {
   static propTypes = {
@@ -51,6 +52,8 @@ export default class extends Component {
     translateY: '0',
     ratio: 1
   }
+
+  canJumpTo = true
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
@@ -63,46 +66,84 @@ export default class extends Component {
   }
 
   handleMoveStart = e => {
-    e.preventDefault()
-    const { button, target } = e
-    if (button !== 0) {
-      return
+    if (isMobile) {
+      const { srcEvent, moveStatus } = e
+      srcEvent.preventDefault()
+
+      const { x, y } = moveStatus
+      this.point = [x, y]
+      const box = this.imageBoxRef
+      this.imageBoxWidth = box.offsetWidth
+      this.imageBoxHeight = box.offsetHeight
+    } else {
+      e.preventDefault()
+      const { button, target } = e
+      if (button !== 0) {
+        return
+      }
+      if (!target || target.tagName.toUpperCase() !== 'IMG') {
+        return
+      }
+      this.point = [e.pageX || e.clientX, e.pageY || e.clientX]
+      const box = this.imageBoxRef
+      this.imageBoxWidth = box.offsetWidth
+      this.imageBoxHeight = box.offsetHeight
     }
-    if (!target || target.tagName.toUpperCase() !== 'IMG') {
-      return
-    }
-    this.point = [e.pageX || e.clientX, e.pageY || e.clientX]
-    const box = this.imageBoxRef
-    this.imageBoxWidth = box.offsetWidth
-    this.imageBoxHeight = box.offsetHeight
   }
   // todo: 根据缩放程度判断拖拽范围
   handleMove = (e) => {
-    e.preventDefault()
-    if (!this.point) {
-      return
-    }
-    let xDelta = e.pageX - this.point[0]
-    let yDelta = e.pageY - this.point[1]
+    if (isMobile) {
+      const { srcEvent, moveStatus } = e
+      srcEvent.preventDefault()
+      if (!this.point) {
+        return
+      }
+      let xDelta = moveStatus.x - this.point[0]
+      let yDelta = moveStatus.y - this.point[1]
+      this.point = [moveStatus.x, moveStatus.y]
+      const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
+      // 没有旋转的情况
+      const { left, top, right, bottom } = this.imageRef.getBoundingClientRect()
+      const { width: boxWidth, height: boxHeight } = this.imageBoxRef.getBoundingClientRect()
+      if ((left + xDelta >= 0) || (right + xDelta <= boxWidth)) {
+        xDelta = 0
+      }
+      if ((top + yDelta >= 0) || (bottom + yDelta <= boxHeight)) {
+        yDelta = 0
+      }
+      // todo: 有旋转的情况
 
-    this.point = [e.pageX, e.pageY]
-    const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
+      this.setState({
+        translateX: `${x + xDelta}px`,
+        translateY: `${y + yDelta}px`
+      })
+    } else {
+      e.preventDefault()
+      if (!this.point) {
+        return
+      }
+      let xDelta = e.pageX - this.point[0]
+      let yDelta = e.pageY - this.point[1]
 
-    // 没有旋转的情况
-    const { left, top, right, bottom } = this.imageRef.getBoundingClientRect()
-    const { width: boxWidth, height: boxHeight } = this.imageBoxRef.getBoundingClientRect()
-    if ((left + xDelta >= 0) || (right + xDelta <= boxWidth)) {
-      xDelta = 0
-    }
-    if ((top + yDelta >= 0) || (bottom + yDelta <= boxHeight)) {
-      yDelta = 0
-    }
-    // todo: 有旋转的情况
+      this.point = [e.pageX, e.pageY]
+      const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
 
-    this.setState({
-      translateX: `${x + xDelta}px`,
-      translateY: `${y + yDelta}px`
-    })
+      // 没有旋转的情况
+      const { left, top, right, bottom } = this.imageRef.getBoundingClientRect()
+      const { width: boxWidth, height: boxHeight } = this.imageBoxRef.getBoundingClientRect()
+      if ((left + xDelta >= 0) || (right + xDelta <= boxWidth)) {
+        xDelta = 0
+      }
+      if ((top + yDelta >= 0) || (bottom + yDelta <= boxHeight)) {
+        yDelta = 0
+      }
+      // todo: 有旋转的情况
+
+      this.setState({
+        translateX: `${x + xDelta}px`,
+        translateY: `${y + yDelta}px`
+      })
+    }
   }
 
   handleMoveEnd = () => {
@@ -135,6 +176,7 @@ export default class extends Component {
       maxZoomSize
     }, imageBox)
     const ratio = width / imageEle.width
+    this.cacheRatio = ratio
     this.imageWidth = imageEle.width
     this.imageHeight = imageEle.height
     this.setState({
@@ -174,11 +216,15 @@ export default class extends Component {
   }
 
   handleZoom = (out = false) => {
+    // todo: 如果ratio 和初始的不一样，那么才能下一页
+
     const { zoomStep, minZoomSize, maxZoomSize } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
     const ratio = imageRect.width / this.imageWidth
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
+      console.log(r, '|', this.cacheRatio)
+      this.canJumpTo = r <= this.cacheRatio // todo: 优化
       this.setState({
         ratio: r,
         translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
@@ -249,10 +295,19 @@ export default class extends Component {
     }
 
     return (
-      <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
-        {loadingComponent}
-        {contentComponent}
-      </div>
+      <Gesture
+        onPanStart={(e) => {
+          this.handleMoveStart(e)
+        }}
+        onPanMove={(e) => {
+          // this.handleMobileMove(e)
+          this.handleMove(e)
+        }}>
+        <div ref={node => { this.imageBoxRef = node }} className={`${prefixCls}-image`}>
+          {loadingComponent}
+          {contentComponent}
+        </div>
+      </Gesture>
     )
   }
 }

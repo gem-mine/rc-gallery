@@ -144,14 +144,6 @@ class Gallery extends Component {
     if (keymap) {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
-
-    // this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
-    // if (this.imageBoxRef.imageRef) {
-    //   this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-    //   // 鼠标移入图片内时停止自动播放
-    //   Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
-    //   Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
-    // }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
@@ -159,29 +151,6 @@ class Gallery extends Component {
   }
 
   componentWillUnmount () {
-    // const { mouseWheelZoom } = this.props
-    //
-    // Util.removeEvent(window, 'resize', this.handleResize)
-    //
-    // // Util.removeEvent(document, 'mousewheel', this.handleWheel)
-    // Util.removeEvent(document, 'wheel', this.handleWheel)
-    // if (this.props.keymap) {
-    //   Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
-    // }
-    // if (this.imageBoxRef.imageRef) {
-    //   this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-    //   Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
-    //   Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
-    //
-    //   Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
-    //   Util.removeEvent(this.image, 'mousemove', this.handleMove)
-    //   Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
-    //
-    //   if (mouseWheelZoom) {
-    //     Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-    //     Util.removeEvent(this.image, 'wheel', this.handleWheel)
-    //   }
-    // }
     // 清除自动播放定时器
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
@@ -569,10 +538,13 @@ class Gallery extends Component {
     this.setState({ thumbnailScroll })
   }
   onSwipe = (status) => {
+    if (!this.imageBoxes[this.state.currentIndex].canJumpTo) {
+      return
+    }
     if (status.direction === 2) {
-      this.handlePrev()
-    } else if (status.direction === 4) {
       this.handleNext()
+    } else if (status.direction === 4) {
+      this.handlePrev()
     }
   }
   onPan = (() => {
@@ -589,13 +561,10 @@ class Gallery extends Component {
     }
 
     return {
-      onPanStart: () => {
-        this.setState({
-          isMoving: true
-        });
-      },
-
       onPanMove: (status) => {
+        if (!this.imageBoxes[this.state.currentIndex].canJumpTo) {
+          return
+        }
         let offset = getLastOffset()
         offset += status.moveStatus.x
 
@@ -607,11 +576,11 @@ class Gallery extends Component {
       },
 
       onPanEnd: () => {
+        if (!this.imageBoxes[this.state.currentIndex].canJumpTo) {
+          return
+        }
         lastOffset = finalOffset
         const offsetIndex = this.getOffsetIndex(finalOffset, this.layout.clientWidth)
-        this.setState({
-          isMoving: false
-        })
         if (offsetIndex === this.state.currentIndex) {
           this.layout.style.transform = this.getContentPosByIndex(offsetIndex)
         } else {
@@ -713,7 +682,10 @@ class Gallery extends Component {
       <div className={classNames(prefixCls, {
         [`${prefixCls}-inline`]: displayMode === 'inline'
       })}>
-        <Gesture onSwipe={this.onSwipe} {...this.onPan}>
+        <Gesture
+          onSwipe={this.onSwipe}
+          {...this.onPan}
+        >
           <div
             className={`${prefixCls}-content`}
             style={{
