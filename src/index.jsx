@@ -715,7 +715,7 @@ class Gallery extends Component {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'row' }}>
-              {this.state.images.map((item, index) => {
+              {this.props.images.map((item, index) => {
                 return (
                   <ImageBox
                     key={index}
