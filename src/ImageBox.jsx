@@ -7,7 +7,6 @@ import Gesture from 'rc-gesture'
 export default class extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
-    error: PropTypes.bool,
     images: PropTypes.array,
     src: PropTypes.string,
     currentSrc: PropTypes.string,
@@ -26,16 +25,9 @@ export default class extends Component {
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
-    loading: true,
-    error: false,
     zoomStep: 0.2,
     maxZoomSize: 3,
     minZoomSize: 0.2,
-    width: 0,
-    height: 0,
-    top: 0,
-    left: 0,
-    rotate: 0,
     src: '',
     mouseZoomDirection: (e) => {
       // 根据系统，win下滚轮向上放大，向下缩小；mac下相反
@@ -254,8 +246,8 @@ export default class extends Component {
   }
 
   render () {
-    const { prefixCls, spinClass, error } = this.props
-    const { loading } = this.state
+    const { prefixCls, spinClass } = this.props
+    const { loading, error } = this.state
     let loadingComponent = null
     let contentComponent = null
 
@@ -278,7 +270,7 @@ export default class extends Component {
     } else {
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        ...(getTransformComp(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
+        ...(getTransformComp(`translate3d(${this.state.translateX}, ${this.state.translateY}, 0) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}

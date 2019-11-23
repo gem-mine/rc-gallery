@@ -231,7 +231,8 @@ export function getTransformComp (v) {
   return {
     transform: v,
     WebkitTransform: v,
-    MozTransform: v
+    MozTransform: v,
+    MsTransform: v
   }
 }
 
@@ -239,6 +240,7 @@ export function getTransformCenterXY (v) {
   return {
     transform: v,
     WebkitTransform: v,
-    MozTransform: v
+    MozTransform: v,
+    MsTransform: v
   }
 }

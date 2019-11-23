@@ -1,32 +1,58 @@
 import React, { Component } from 'react'
 import ThumbnailItem from './ThumbnailItem'
 import classNames from 'classnames'
+import PropTypes from 'prop-types'
 
 class Thumbnail extends Component {
+  static propTypes = {
+    prefixCls: PropTypes.string,
+    images: PropTypes.array,
+    handleShowThumbnail: PropTypes.func,
+    showThumbnail: PropTypes.bool,
+    thumbnailScrollDuration: PropTypes.number,
+    thumbnailIcon: PropTypes.node,
+    thumbnailScroll: PropTypes.number,
+    style: PropTypes.object,
+    handleThumbnailItemClick: PropTypes.func
+  }
   render () {
-    const props = this.props
+    const {
+      images,
+      prefixCls,
+      handleShowThumbnail,
+      showThumbnail,
+      thumbnailScrollDuration,
+      thumbnailIcon,
+      thumbnailScroll,
+      style
+    } = this.props
     const thumbnailItems = []
-    props.images.map((v, index) => {
+    images.map((v, index) => {
       thumbnailItems.push(
-        <ThumbnailItem {...props} src={v.thumbnail || v.original} key={index} index={index} />
+        <ThumbnailItem
+          prefixCls={prefixCls}
+          src={v.thumbnail || v.original}
+          key={index}
+          handleThumbnailItemClick={this.props.handleThumbnailItemClick}
+          index={index} />
       )
     })
     const classes = classNames({
-      [`${props.prefixCls}-thumbnail-switch`]: true,
-      [`${props.prefixCls}-thumbnail-switch-close`]: !props.showThumbnail
+      [`${prefixCls}-thumbnail-switch`]: true,
+      [`${prefixCls}-thumbnail-switch-close`]: !showThumbnail
     })
     return (
-      <div className={`${props.prefixCls}-thumbnail`} ref={node => { this.thumbnailWrapper = node }} style={{ ...props.style }}>
+      <div className={`${prefixCls}-thumbnail`} ref={node => { this.thumbnailWrapper = node }} style={{ ...style }}>
         <div
           className={`${classes}`}
-          onClick={() => { props.handleShowThumbnail(!props.showThumbnail) }} >
+          onClick={() => { handleShowThumbnail(!showThumbnail) }} >
           <span>
-            {props.thumbnailIcon || <i className={`anticon anticon-caret-down`} />}
+            {thumbnailIcon || <i className={`anticon anticon-caret-down`} />}
           </span>
         </div>
-        <div className={`${props.prefixCls}-thumbnail-content`}
+        <div className={`${prefixCls}-thumbnail-content`}
           ref={node => { this.thumbnail = node }}
-          style={{ left: props.thumbnailScroll, transition: `left ${props.thumbnailScrollDuration}ms` }}>
+          style={{ left: thumbnailScroll, transition: `left ${thumbnailScrollDuration}ms` }}>
           {thumbnailItems}
         </div>
       </div>

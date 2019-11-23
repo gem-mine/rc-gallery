@@ -1,6 +1,5 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import ReactDOM from 'react-dom'
 import Util, { isMac } from './util'
 import Toolbar from './Toolbar'
 import ImageBox from './ImageBox'
@@ -37,6 +36,7 @@ class Gallery extends Component {
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
     nextIcon: PropTypes.node,
+    spinClass: PropTypes.node,
     displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
     mouseZoomDirection: PropTypes.func
@@ -76,6 +76,15 @@ class Gallery extends Component {
       return isMac ? e.deltaY < 0 : e.deltaY > 0
     }
   }
+  // todo： 处理images的数据问题
+  static getDerivedStateFromProps (nextProps) {
+    if ('visible' in nextProps) {
+      return {
+        visible: nextProps.visible,
+      };
+    }
+    return null;
+  }
   imageBoxes = []
   state = {
     currentIndex: 0,
@@ -107,6 +116,11 @@ class Gallery extends Component {
       currentIndex = props.startIndex
     }
 
+    const images = props.images.slice(0)
+    images.push(props.images)
+    images.unshift(props.images.length - 1)
+    this.state.images = images
+
     let currentSrc = props.currentSrc
     props.images.some((v, i) => {
       if (v.original === currentSrc) {
@@ -130,7 +144,7 @@ class Gallery extends Component {
       showThumbnail,
       autoPlay,
       keymap,
-      displayMode,
+      displayMode
     } = this.props
 
     Util.addEvent(window, 'resize', this.handleResize)
@@ -667,8 +681,11 @@ class Gallery extends Component {
     if (images.length > 1 && showThumbnail) {
       thumbnail = (
         <Thumbnail
-          {...this.props}
-          {...this.state}
+          currentIndex={this.state.currentIndex}
+          showThumbnail={this.props.showThumbnail}
+          thumbnailIcon={this.props.thumbnailIcon}
+          spinClass={this.props.spinClass}
+          prefixCls={prefixCls}
           style={{ height: this.state.showThumbnail ? '100px' : '0' }}
           ref={node => { this.thumbnailComponent = node }}
           images={this.props.images}
@@ -698,7 +715,7 @@ class Gallery extends Component {
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'row' }}>
-              {this.props.images.map((item, index) => {
+              {this.state.images.map((item, index) => {
                 return (
                   <ImageBox
                     key={index}
@@ -708,8 +725,17 @@ class Gallery extends Component {
                     handleTogglePlay={this.handleTogglePlay}
                     play={this.play}
                     pause={this.pause}
-                    {...this.props}
-                    {...this.state} />
+                    prefixCls={prefixCls}
+                    images={this.props.images}
+                    currentSrc={this.state.currentSrc}
+                    spinClass={this.props.spinClass}
+                    mouseZoomDirection={this.props.mouseZoomDirection}
+                    zoomStep={this.props.zoomStep}
+                    maxZoomSize={this.props.maxZoomSize}
+                    minZoomSize={this.props.minZoomSize}
+                    onImageLoad={this.props.onImageLoad}
+                    onImageLoadError={this.props.onImageLoadError}
+                    currentIndex={this.state.currentIndex} />
                 )
               })}
             </div>
