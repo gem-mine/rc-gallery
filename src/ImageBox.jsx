@@ -7,9 +7,7 @@ import Gesture from 'rc-gesture'
 export default class extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
-    images: PropTypes.array,
     src: PropTypes.string,
-    currentSrc: PropTypes.string,
     spinClass: PropTypes.object,
     mouseZoomDirection: PropTypes.func,
     zoomStep: PropTypes.number,
@@ -51,15 +49,17 @@ export default class extends Component {
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
   componentDidMount () {
-    this.image = ReactDOM.findDOMNode(this.imageRef)
-    const { currentSrc, src } = this.props
-    if (currentSrc === src) {
-      this.setState({ src: currentSrc })
-    }
+    // const { currentSrc, src } = this.props
+    // if (currentSrc === src) {
+    //   this.setState({ src: currentSrc })
+    // }
   }
 
   handleMoveStart = e => {
     if (isMobile) {
+      if (this.canJumpTo) {
+        return
+      }
       const { srcEvent, moveStatus } = e
       srcEvent.preventDefault()
 
@@ -86,6 +86,9 @@ export default class extends Component {
   // todo: 根据缩放程度判断拖拽范围
   handleMove = (e) => {
     if (isMobile) {
+      if (this.canJumpTo) {
+        return
+      }
       const { srcEvent, moveStatus } = e
       srcEvent.preventDefault()
       if (!this.point) {
@@ -238,13 +241,13 @@ export default class extends Component {
 
   // todo: 懒加载优化
   // todo：每次jumpTo的时候图片的位置和大小需要重置
-  componentDidUpdate (prevProps) {
-    if (prevProps.currentIndex !== this.props.currentIndex) {
-      if (this.props.index === this.props.currentIndex) {
-        this.src = this.props.images[this.props.currentIndex].original
-      }
-    }
-  }
+  // componentDidUpdate (prevProps) {
+  //   if (prevProps.currentIndex !== this.props.currentIndex) {
+  //     if (this.props.index === this.props.currentIndex) {
+  //       this.src = this.props.images[this.props.currentIndex].original
+  //     }
+  //   }
+  // }
 
   render () {
     const { prefixCls, spinClass } = this.props
@@ -275,7 +278,7 @@ export default class extends Component {
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}
-        src={this.state.src || this.src}
+        src={this.props.src || this.src}
         onWheel={this.props.mouseWheelZoom ? this.handleWheel : null}
         onMouseOut={this.handleMouseOut} // 鼠标移入图片内时停止自动播放
         onMouseOver={this.handleMouseOver}
@@ -286,7 +289,6 @@ export default class extends Component {
         onError={this.onError}
         onLoad={this.onLoad} />
     }
-
     return (
       <Gesture
         onPanStart={(e) => {

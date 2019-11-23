@@ -45,26 +45,18 @@ import Gallery from 'rc-gallery'
 
 const images = [
       {
-        original: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5.jpg',
-        thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
+        original: '//iph.href.lu/800x600?text=0',
+        thumbnail: '//iph.href.lu/800x600?text=0',
         description: <div>图片描述</div>
       },
       {
-        original: '//img.zmei.me/gm/26828021367384226.jpg',
-        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg',
+        original: '//iph.href.lu/800x600?text=1&bg=9df',
+        thumbnail: '//iph.href.lu/800x600?text=1&bg=9df',
         description: <div style={{overflowY: 'scroll', maxHeight: '100px'}}>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/></div>
       },
       {
-        original: '//img.zmei.me/gm/priview.jpg',
-        thumbnail: '//img.zmei.me/gm/priview-thumb.jpg'
-      },
-      {
-        original: '//img.zmei.me/gm/lazyimg1.jpg',
-        thumbnail: '//img.zmei.me/gm/lazyimg1-thumb.jpg',
-      },
-      {
-        original: '//img.zmei.me/gm/lazyimg2.jpg',
-        thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
+        original: '//iph.href.lu/800x600?text=2&bg=abc',
+        thumbnail: '//iph.href.lu/800x600?text=2&bg=abc'
       }
     ]
 
