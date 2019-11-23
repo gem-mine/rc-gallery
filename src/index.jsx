@@ -69,21 +69,16 @@ class Gallery extends Component {
     maxZoomSize: 3,
     minZoomSize: 0.2,
     customToolbarItem: () => {},
-    displayMode: 'modal',
-    mouseWheelZoom: true,
-    mouseZoomDirection: (e) => {
-      // 根据系统，win下滚轮向上放大，向下缩小；mac下相反
-      return isMac ? e.deltaY < 0 : e.deltaY > 0
-    }
+    displayMode: 'modal'
   }
   // todo： 处理images的数据问题
   static getDerivedStateFromProps (nextProps) {
     if ('visible' in nextProps) {
       return {
-        visible: nextProps.visible,
-      };
+        visible: nextProps.visible
+      }
     }
-    return null;
+    return null
   }
   imageBoxes = []
   state = {

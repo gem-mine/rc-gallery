@@ -29,6 +29,7 @@ export default class extends Component {
     maxZoomSize: 3,
     minZoomSize: 0.2,
     src: '',
+    mouseWheelZoom: true,
     mouseZoomDirection: (e) => {
       // 根据系统，win下滚轮向上放大，向下缩小；mac下相反
       return isMac ? e.deltaY < 0 : e.deltaY > 0
