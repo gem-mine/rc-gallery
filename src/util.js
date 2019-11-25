@@ -3,6 +3,7 @@
  */
 let scrollBarCached
 export const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
+export const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase())
 export default {
   getPosition ({ width, height, minZoomSize, maxZoomSize }, box) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
@@ -226,10 +227,20 @@ export default {
     return transArr
   }
 }
-export function getTransformPropValue (v) {
+export function getTransformComp (v) {
   return {
     transform: v,
     WebkitTransform: v,
-    MozTransform: v
+    MozTransform: v,
+    MsTransform: v
+  }
+}
+
+export function getTransformCenterXY (v) {
+  return {
+    transform: v,
+    WebkitTransform: v,
+    MozTransform: v,
+    MsTransform: v
   }
 }

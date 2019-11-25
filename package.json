@@ -30,7 +30,8 @@
     "classnames": "~2.2.0",
     "lodash.throttle": "^4.1.1",
     "prop-types": "^15.6.2",
-    "rc-gesture": "0.0.22"
+    "rc-gesture": "0.0.22",
+    "rmc-nuka-carousel": "^3.0.1"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
