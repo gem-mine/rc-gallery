@@ -162,13 +162,17 @@ export default class extends Component {
     this.initRatio = ratio
     this.imageWidth = imageEle.width
     this.imageHeight = imageEle.height
+    this.transition = 'all .3s'
+    setTimeout(() => {
+      this.transition = 'none'
+    }, 300)
     this.setState({
       loading: false,
       error: false,
       rotate: 0,
       ratio,
-      translateX: (imageBox.offsetWidth - imageEle.offsetWidth) / 2 + 'px', // 居中 todo： 优化
-      translateY: (imageBox.offsetHeight - imageEle.offsetHeight) / 2 + 'px',
+      translateX: `${(imageBox.offsetWidth - imageEle.offsetWidth) / 2}px`,
+      translateY: `${(imageBox.offsetHeight - imageEle.offsetHeight) / 2}px`,
       src
     })
   }
@@ -273,8 +277,10 @@ export default class extends Component {
         )
       }
     } else {
+      console.log(this.transition)
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
+        transition: this.transition,
         ...(getTransformComp(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img

@@ -137,6 +137,7 @@ class Gallery extends Component {
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
+    this.setState({ renderToolbar: !!this.imageBoxes[0] })
     this.updateThumbnailScroll(this.state.currentIndex)
   }
 
@@ -509,7 +510,7 @@ class Gallery extends Component {
       disableNext
     })
 
-    const toolbar = this.renderToolbar({
+    const toolbar = this.state.renderToolbar && this.renderToolbar({
       showToolbar,
       prefixCls,
       images,
