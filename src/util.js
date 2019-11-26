@@ -4,6 +4,7 @@
 let scrollBarCached
 export const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 export const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase())
+export const isIE9 = !window.atob
 export default {
   getPosition ({ width, height, minZoomSize, maxZoomSize }, box) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
@@ -210,21 +211,29 @@ export default {
     }
   },
 
-  getComputedTranslateXY (obj) {
-    const transArr = []
+  getComputedTranslateXY (el) {
     if (!window.getComputedStyle) {
       return
     }
-    const style = window.getComputedStyle(obj)
-    const transform = style.transform || style.webkitTransform || style.mozTransform
+    const style = window.getComputedStyle(el)
+    const transform = style.transform || style.WebkitTransform || style.MozTransform || style.msTransform
+
     let mat = transform.match(/^matrix3d\((.+)\)$/)
     if (mat) {
       return parseFloat(mat[1].split(', ')[13])
     }
     mat = transform.match(/^matrix\((.+)\)$/)
-    mat && transArr.push(parseFloat(mat[1].split(', ')[4]))
-    mat && transArr.push(parseFloat(mat[1].split(', ')[5]))
-    return transArr
+    if (mat) {
+      return [parseFloat(mat[1].split(', ')[4]), parseFloat(mat[1].split(', ')[5])]
+    }
+
+    if (isIE9) {
+      const matX = transform.match(/translateX\(([-\][\d]+(px))\)/)
+      const matY = transform.match(/translateY\(([-\][\d]+(px))\)/)
+      if (matX && matX[1] && matY && matY[1]) {
+        return [parseFloat(matX[1]), parseFloat(matY[1])]
+      }
+    }
   }
 }
 export function getTransformComp (v) {
@@ -232,15 +241,6 @@ export function getTransformComp (v) {
     transform: v,
     WebkitTransform: v,
     MozTransform: v,
-    MsTransform: v
-  }
-}
-
-export function getTransformCenterXY (v) {
-  return {
-    transform: v,
-    WebkitTransform: v,
-    MozTransform: v,
-    MsTransform: v
+    msTransform: v
   }
 }

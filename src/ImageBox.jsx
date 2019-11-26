@@ -1,7 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import Util, { isMac, getTransformComp, isMobile } from './util'
-import ReactDOM from 'react-dom'
 import Gesture from 'rc-gesture'
 
 export default class extends Component {
@@ -19,6 +18,7 @@ export default class extends Component {
     pause: PropTypes.func,
     currentIndex: PropTypes.number,
     index: PropTypes.number, // 图片的索引
+    setSwiping: PropTypes.func,
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
   static defaultProps = {
@@ -41,10 +41,10 @@ export default class extends Component {
     height: 0,
     translateX: '0',
     translateY: '0',
+    rotate: 0,
     ratio: 1
   }
 
-  canJumpTo = true
   // todo: transform优化为一个函数
   // todo: ie9下无法拖拽
   // todo: 缩放拖拽后缩小时要居中
@@ -57,9 +57,6 @@ export default class extends Component {
 
   handleMoveStart = e => {
     if (isMobile) {
-      if (this.canJumpTo) {
-        return
-      }
       const { srcEvent, moveStatus } = e
       srcEvent.preventDefault()
 
@@ -86,9 +83,6 @@ export default class extends Component {
   // todo: 根据缩放程度判断拖拽范围
   handleMove = (e) => {
     if (isMobile) {
-      if (this.canJumpTo) {
-        return
-      }
       const { srcEvent, moveStatus } = e
       srcEvent.preventDefault()
       if (!this.point) {
@@ -123,7 +117,6 @@ export default class extends Component {
 
       this.point = [e.pageX, e.pageY]
       const [x = 0, y = 0] = Util.getComputedTranslateXY(this.imageRef)
-
       // 没有旋转的情况
       const { left, top, right, bottom } = this.imageRef.getBoundingClientRect()
       const { width: boxWidth, height: boxHeight } = this.imageBoxRef.getBoundingClientRect()
@@ -134,7 +127,6 @@ export default class extends Component {
         yDelta = 0
       }
       // todo: 有旋转的情况
-
       this.setState({
         translateX: `${x + xDelta}px`,
         translateY: `${y + yDelta}px`
@@ -213,14 +205,12 @@ export default class extends Component {
 
   handleZoom = (out = false) => {
     // todo: 如果ratio 和初始的不一样，那么才能下一页
-
     const { zoomStep, minZoomSize, maxZoomSize } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
     const ratio = imageRect.width / this.imageWidth
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
-      console.log(r, '|', this.cacheRatio)
-      this.canJumpTo = r <= this.cacheRatio // todo: 优化
+      this.props.setSwiping && this.props.setSwiping(r <= this.cacheRatio)
       this.setState({
         ratio: r,
         translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
@@ -274,7 +264,7 @@ export default class extends Component {
     } else {
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        ...(getTransformComp(`translate3d(${this.state.translateX}, ${this.state.translateY}, 0) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
+        ...(getTransformComp(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}

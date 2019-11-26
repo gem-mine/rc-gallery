@@ -90,24 +90,25 @@ class Gallery extends Component {
     thumbnailScroll: 0, // 缩略图的位置
     showThumbnail: true, // 是否显示缩略图
     mouseWheelZoom: true,
-    contentPos: `translate3d(0, 0, 0)` // 跳转到第几页对应的translateX位置
   }
 
   constructor (props) {
     super(props)
-    // 无限滚动数据处理
-    const images = props.images.slice(0)
-    images.push(props.images[0])
-    images.unshift(props.images[props.images.length - 1])
-    this.state.images = images
 
-    // 因为无限滚动修改了数据，默认从1开始
-    let currentIndex = 1
-    const startIndex = props.startIndex - 1 // 兼容以上无限滚动修改数据
-    if (startIndex && startIndex >= 0 && startIndex <= props.images.length - 1) {
-      currentIndex = startIndex
+    let currentIndex = 0
+    if (props.startIndex && props.startIndex >= 0 && props.startIndex <= props.images.length - 1) {
+      currentIndex = props.startIndex
     }
 
+    let src = props.src
+    props.images.some((v, i) => {
+      if (v.original === src) {
+        currentIndex = i
+        return true
+      }
+    })
+    src = props.images[currentIndex].original
+    this.state.src = src
     this.state.showThumbnail = props.showThumbnail
 
     this.state.currentIndex = currentIndex
@@ -140,7 +141,6 @@ class Gallery extends Component {
       this.addScrollingEffect()
     }
     this.updateThumbnailScroll(this.state.currentIndex)
-    this.setState({ contentPos: `translate3d(${-this.state.currentIndex * window.innerWidth}px, 0, 0)` })
   }
 
   componentWillUnmount () {
@@ -250,7 +250,6 @@ class Gallery extends Component {
     if (nextIndex !== this.state.currentIndex) {
       this.setState({
         currentIndex: nextIndex,
-        contentPos: `translate3d(${-nextIndex * this.layout.clientWidth}px, 0, 0)`,
         disableNext: index >= count && !this.props.infinite,
         disablePrev: index <= 0 && !this.props.infinite
       })
@@ -355,6 +354,31 @@ class Gallery extends Component {
     this.setState({ thumbnailScroll })
   }
 
+  setSwiping = (swiping) => {
+    this.setState({ swiping: swiping })
+  }
+
+  renderImageBox = (imageObj, index) => {
+    return (
+      <ImageBox
+        key={index}
+        src={imageObj.original}
+        setSwiping={isMobile ? this.setSwiping : null}
+        ref={node => { this.imageBoxes[index] = node }}
+        handleTogglePlay={this.handleTogglePlay}
+        play={this.play}
+        pause={this.pause}
+        prefixCls={this.props.prefixCls}
+        spinClass={this.props.spinClass}
+        mouseZoomDirection={this.props.mouseZoomDirection}
+        zoomStep={this.props.zoomStep}
+        maxZoomSize={this.props.maxZoomSize}
+        minZoomSize={this.props.minZoomSize}
+        onImageLoad={this.props.onImageLoad}
+        onImageLoadError={this.props.onImageLoadError} />
+    )
+  }
+
   render () {
     const {
       prefixCls,
@@ -392,15 +416,24 @@ class Gallery extends Component {
       )
     }
 
-    // toolbar控制问题
     let toolbar = null
     if (showToolbar) {
+      let handleZoom = null
+      let handleRotate = null
+      if (this.imageBox) {
+        handleZoom = this.imageBox.handleZoom
+        handleRotate = this.imageBox.handleRotate
+      }
+      if (this.imageBoxes[this.state.currentIndex]) {
+        handleZoom = this.imageBoxes[this.state.currentIndex].handleZoom
+        handleRotate = this.imageBoxes[this.state.currentIndex].handleRotate
+      }
       toolbar = (
         <Toolbar
           {...this.props}
           {...this.state}
-          handleZoom={this.imageBoxes[this.state.currentIndex] ? this.imageBoxes[this.state.currentIndex].handleZoom : null}
-          handleRotate={this.imageBoxes[this.state.currentIndex] ? this.imageBoxes[this.state.currentIndex].handleRotate : null}
+          handleZoom={handleZoom}
+          handleRotate={handleRotate}
           handleTogglePlay={this.handleTogglePlay} />
       )
     }
@@ -432,31 +465,21 @@ class Gallery extends Component {
           style={{
             bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0'
           }}>
-          <ReactCarousel
-            wrapAround
-            dragging={false}
-            swiping={this.state.swiping} // todo: imageBox 缩放的时候，调用index的方法设置swiping为false
-            style={{ minHeight: 300 }}>
-            {images.map((item, index) => {
-              return (
-                <ImageBox
-                  key={index}
-                  src={item.original}
-                  ref={node => { this.imageBoxes[index] = node }}
-                  handleTogglePlay={this.handleTogglePlay}
-                  play={this.play}
-                  pause={this.pause}
-                  prefixCls={prefixCls}
-                  spinClass={this.props.spinClass}
-                  mouseZoomDirection={this.props.mouseZoomDirection}
-                  zoomStep={this.props.zoomStep}
-                  maxZoomSize={this.props.maxZoomSize}
-                  minZoomSize={this.props.minZoomSize}
-                  onImageLoad={this.props.onImageLoad}
-                  onImageLoadError={this.props.onImageLoadError} />
-              )
-            })}
-          </ReactCarousel>
+          {
+            isMobile ? (
+              <ReactCarousel
+                wrapAround
+                dragging={false}
+                swiping={this.state.swiping}
+                style={{ minHeight: 300 }}>
+                {images.map((item, index) => {
+                  return this.renderImageBox(item, index)
+                })}
+              </ReactCarousel>
+            ) : (
+              <ImageBox ref={node => { this.imageBox = node }} src={images[this.state.currentIndex].original} />
+            )
+          }
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
             {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
