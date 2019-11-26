@@ -46,17 +46,17 @@ import Gallery from 'rc-gallery'
 const images = [
       {
         original: '//iph.href.lu/800x600?text=0',
-        thumbnail: '//iph.href.lu/800x600?text=0',
+        thumbnail: '//iph.href.lu/200x100?text=0',
         description: <div>图片描述</div>
       },
       {
         original: '//iph.href.lu/800x600?text=1&bg=9df',
-        thumbnail: '//iph.href.lu/800x600?text=1&bg=9df',
+        thumbnail: '//iph.href.lu/200x100?text=1&bg=9df',
         description: <div style={{overflowY: 'scroll', maxHeight: '100px'}}>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/></div>
       },
       {
         original: '//iph.href.lu/800x600?text=2&bg=abc',
-        thumbnail: '//iph.href.lu/800x600?text=2&bg=abc'
+        thumbnail: '//iph.href.lu/200x100?text=2&bg=abc'
       }
     ]
 

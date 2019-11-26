@@ -13,7 +13,8 @@ class Thumbnail extends Component {
     thumbnailIcon: PropTypes.node,
     thumbnailScroll: PropTypes.number,
     style: PropTypes.object,
-    handleThumbnailItemClick: PropTypes.func
+    handleThumbnailItemClick: PropTypes.func,
+    currentIndex: PropTypes.number
   }
   render () {
     const {
@@ -24,6 +25,7 @@ class Thumbnail extends Component {
       thumbnailScrollDuration,
       thumbnailIcon,
       thumbnailScroll,
+      currentIndex,
       style
     } = this.props
     const thumbnailItems = []
@@ -32,9 +34,11 @@ class Thumbnail extends Component {
         <ThumbnailItem
           prefixCls={prefixCls}
           src={v.thumbnail || v.original}
+          index={index}
           key={index}
+          currentIndex={currentIndex}
           handleThumbnailItemClick={this.props.handleThumbnailItemClick}
-          index={index} />
+        />
       )
     })
     const classes = classNames({
@@ -50,9 +54,10 @@ class Thumbnail extends Component {
             {thumbnailIcon || <i className={`anticon anticon-caret-down`} />}
           </span>
         </div>
-        <div className={`${prefixCls}-thumbnail-content`}
-             ref={node => { this.thumbnail = node }}
-             style={{ left: thumbnailScroll, transition: `left ${thumbnailScrollDuration}ms` }}>
+        <div
+          className={`${prefixCls}-thumbnail-content`}
+          ref={node => { this.thumbnail = node }}
+          style={{ left: thumbnailScroll, transition: `left ${thumbnailScrollDuration}ms` }}>
           {thumbnailItems}
         </div>
       </div>

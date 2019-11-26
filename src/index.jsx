@@ -63,9 +63,6 @@ class Gallery extends Component {
     autoPlay: false,
     playSpeed: 2000,
     showThumbnail: !isMobile,
-    zoomStep: 0.2,
-    maxZoomSize: 3,
-    minZoomSize: 0.2,
     customToolbarItem: () => {},
     displayMode: 'modal'
   }
@@ -73,7 +70,7 @@ class Gallery extends Component {
   imageBoxes = []
 
   state = {
-    currentIndex: 1,
+    currentIndex: 0,
     loading: false,
     error: false,
     width: 0,
@@ -89,7 +86,7 @@ class Gallery extends Component {
     isPlaying: false, // 是否在播放状态 控制toolbar图标
     thumbnailScroll: 0, // 缩略图的位置
     showThumbnail: true, // 是否显示缩略图
-    mouseWheelZoom: true,
+    mouseWheelZoom: true
   }
 
   constructor (props) {
@@ -100,7 +97,7 @@ class Gallery extends Component {
       currentIndex = props.startIndex
     }
 
-    let src = props.src
+    let src = ''
     props.images.some((v, i) => {
       if (v.original === src) {
         currentIndex = i
@@ -207,15 +204,6 @@ class Gallery extends Component {
   }
 
   handleResize = () => {
-    if (!this.state.error) {
-      const { width, height, rotate } = this.state
-      const box = this.imageBox
-      const { top, left } = Util.getZoomOffset({ width, height }, box, Util.isRotation(rotate))
-      this.setState({
-        top,
-        left
-      })
-    }
     this.updateThumbnailScroll(this.state.currentIndex)
   }
 
@@ -265,7 +253,7 @@ class Gallery extends Component {
       this.state.currentIndex < this.props.images.length - 1
   }
 
-  play () {
+  play = () => {
     if (!this.intervalId) {
       const { playSpeed } = this.props
       this.setState({ isPlaying: true })
@@ -280,7 +268,7 @@ class Gallery extends Component {
     }
   }
 
-  pause () {
+  pause = () => {
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
       this.intervalId = null
@@ -359,6 +347,17 @@ class Gallery extends Component {
   }
 
   renderImageBox = (imageObj, index) => {
+    const {
+      prefixCls,
+      spinClass,
+      mouseZoomDirection,
+      maxZoomSize,
+      minZoomSize,
+      onImageLoad,
+      zoomStep,
+      onImageLoadError
+    } = this.props
+    const { currentIndex } = this.state
     return (
       <ImageBox
         key={index}
@@ -368,93 +367,169 @@ class Gallery extends Component {
         handleTogglePlay={this.handleTogglePlay}
         play={this.play}
         pause={this.pause}
-        prefixCls={this.props.prefixCls}
-        spinClass={this.props.spinClass}
-        mouseZoomDirection={this.props.mouseZoomDirection}
-        zoomStep={this.props.zoomStep}
-        maxZoomSize={this.props.maxZoomSize}
-        minZoomSize={this.props.minZoomSize}
-        onImageLoad={this.props.onImageLoad}
-        onImageLoadError={this.props.onImageLoadError} />
+        prefixCls={prefixCls}
+        spinClass={spinClass}
+        mouseZoomDirection={mouseZoomDirection}
+        zoomStep={zoomStep}
+        maxZoomSize={maxZoomSize}
+        minZoomSize={minZoomSize}
+        onImageLoad={onImageLoad}
+        currentIndex={currentIndex}
+        onImageLoadError={onImageLoadError} />
     )
+  }
+
+  renderToolbar = ({
+    showToolbar,
+    prefixCls,
+    images,
+    customToolbarItem,
+    toolbarConfig,
+    currentIndex,
+    src,
+    isPlaying
+  }) => {
+    if (!showToolbar) {
+      return
+    }
+    let handleZoom = null
+    let handleRotate = null
+    if (this.imageBox) {
+      handleZoom = this.imageBox.handleZoom
+      handleRotate = this.imageBox.handleRotate
+    }
+
+    if (this.imageBoxes[this.state.currentIndex]) {
+      handleZoom = this.imageBoxes[this.state.currentIndex].handleZoom
+      handleRotate = this.imageBoxes[this.state.currentIndex].handleRotate
+    }
+    return (
+      <Toolbar
+        prefixCls={prefixCls}
+        src={src}
+        toolbarConfig={toolbarConfig}
+        currentIndex={currentIndex}
+        images={images}
+        isPlaying={isPlaying}
+        customToolbarItem={customToolbarItem}
+        handleZoom={handleZoom}
+        handleRotate={handleRotate}
+        handleTogglePlay={this.handleTogglePlay} />
+    )
+  }
+
+  renderThumbnail = ({
+    prefixCls,
+    images,
+    showThumbnail,
+    thumbnailIcon,
+    spinClass,
+    currentIndex,
+    renderThumbnail,
+    thumbnailScroll
+  }) => {
+    if (images.length > 1 && renderThumbnail) {
+      return (
+        <Thumbnail
+          currentIndex={currentIndex}
+          showThumbnail={showThumbnail}
+          thumbnailIcon={thumbnailIcon}
+          spinClass={spinClass}
+          prefixCls={prefixCls}
+          style={{ height: showThumbnail ? '100px' : '0' }}
+          ref={node => { this.thumbnailComponent = node }}
+          images={images}
+          handleThumbnailItemClick={this.handleThumbnailItemClick}
+          handleShowThumbnail={this.handleShowThumbnail}
+          thumbnailScroll={thumbnailScroll}
+          thumbnailScrollDuration={this.thumbnailScrollDuration} />
+      )
+    }
+  }
+
+  renderPrevNext = ({
+    images,
+    prefixCls,
+    prevIcon,
+    nextIcon,
+    disablePrev,
+    disableNext
+  }) => {
+    if (images.length > 1 & !isMobile) {
+      const prevClass = classNames({
+        [`${prefixCls}-prev`]: true,
+        [`${prefixCls}-disable`]: disablePrev
+      })
+      const nextClass = classNames({
+        [`${prefixCls}-next`]: true,
+        [`${prefixCls}-disable`]: disableNext
+      })
+      return [
+        <div key="prev" className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
+          { prevIcon || <i className="anticon anticon-left" /> }
+        </div>,
+        <div key="next" className={nextClass} onClick={disableNext ? null : this.handleNext}>
+          { nextIcon || <i className="anticon anticon-right" /> }
+        </div>
+      ]
+    }
   }
 
   render () {
     const {
       prefixCls,
-      showThumbnail,
       images,
       closeIcon,
       prevIcon,
       nextIcon,
+      thumbnailIcon,
+      spinClass,
       showToolbar,
+      customToolbarItem,
+      showThumbnail: renderThumbnail,
+      toolbarConfig,
+      infinite,
       displayMode
     } = this.props
+    const {
+      currentIndex,
+      src,
+      thumbnailScroll,
+      disablePrev,
+      disableNext,
+      isPlaying,
+      showThumbnail
+    } = this.state
+    const prevNext = this.renderPrevNext({
+      images,
+      prefixCls,
+      prevIcon,
+      nextIcon,
+      disablePrev,
+      disableNext
+    })
 
-    let prev = null
-    let next = null
-    if (images.length > 1 & !isMobile) {
-      const { disablePrev, disableNext } = this.state
-      const prevClass = classNames({
-        [`${prefixCls}-prev`]: true,
-        [`${prefixCls}-disable`]: disablePrev
-      })
-      prev = (
-        <div className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
-          { prevIcon || <i className="anticon anticon-left" /> }
-        </div>
-      )
+    const toolbar = this.renderToolbar({
+      showToolbar,
+      prefixCls,
+      images,
+      customToolbarItem,
+      toolbarConfig,
+      currentIndex,
+      src,
+      isPlaying
+    })
 
-      const nextClass = classNames({
-        [`${prefixCls}-next`]: true,
-        [`${prefixCls}-disable`]: disableNext
-      })
-      next = (
-        <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
-          { nextIcon || <i className="anticon anticon-right" /> }
-        </div>
-      )
-    }
-
-    let toolbar = null
-    if (showToolbar) {
-      let handleZoom = null
-      let handleRotate = null
-      if (this.imageBox) {
-        handleZoom = this.imageBox.handleZoom
-        handleRotate = this.imageBox.handleRotate
-      }
-      if (this.imageBoxes[this.state.currentIndex]) {
-        handleZoom = this.imageBoxes[this.state.currentIndex].handleZoom
-        handleRotate = this.imageBoxes[this.state.currentIndex].handleRotate
-      }
-      toolbar = (
-        <Toolbar
-          {...this.props}
-          {...this.state}
-          handleZoom={handleZoom}
-          handleRotate={handleRotate}
-          handleTogglePlay={this.handleTogglePlay} />
-      )
-    }
-    let thumbnail = null
-    if (images.length > 1 && showThumbnail) {
-      thumbnail = (
-        <Thumbnail
-          currentIndex={this.state.currentIndex}
-          showThumbnail={this.props.showThumbnail}
-          thumbnailIcon={this.props.thumbnailIcon}
-          spinClass={this.props.spinClass}
-          prefixCls={prefixCls}
-          style={{ height: this.state.showThumbnail ? '100px' : '0' }}
-          ref={node => { this.thumbnailComponent = node }}
-          images={this.props.images}
-          handleThumbnailItemClick={this.handleThumbnailItemClick}
-          handleShowThumbnail={this.handleShowThumbnail}
-          thumbnailScroll={this.state.thumbnailScroll}
-          thumbnailScrollDuration={this.thumbnailScrollDuration} />
-      )
-    }
+    const thumbnail = this.renderThumbnail({
+      prefixCls,
+      images,
+      showThumbnail,
+      thumbnailIcon,
+      spinClass,
+      currentIndex,
+      renderThumbnail,
+      thumbnailScroll
+    })
 
     return (
       <div className={classNames(prefixCls, {
@@ -463,28 +538,37 @@ class Gallery extends Component {
         <div
           className={`${prefixCls}-content`}
           style={{
-            bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0'
+            bottom: (showThumbnail && images.length > 1) ? '100px' : '0'
           }}>
           {
             isMobile ? (
               <ReactCarousel
-                wrapAround
+                wrapAround={infinite}
+                decorators={[]}
+                withoutControls
                 dragging={false}
                 swiping={this.state.swiping}
-                style={{ minHeight: 300 }}>
+                afterSlide={index => {
+                  this.setState({ currentIndex: index })
+                }}>
                 {images.map((item, index) => {
                   return this.renderImageBox(item, index)
                 })}
               </ReactCarousel>
             ) : (
-              <ImageBox ref={node => { this.imageBox = node }} src={images[this.state.currentIndex].original} />
+              <ImageBox
+                play={this.play}
+                pause={this.pause}
+                isPlaying={isPlaying}
+                showThumbnail={showThumbnail}
+                ref={node => { this.imageBox = node }}
+                src={images[this.state.currentIndex].original} />
             )
           }
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
             {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
-          {prev}
-          {next}
+          {prevNext}
           {toolbar}
           <Footer {...this.state} {...this.props} />
         </div>
