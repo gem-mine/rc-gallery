@@ -603,8 +603,8 @@ class Gallery extends Component {
     }
 
     let thumbnail = null
-    if (this.isMobile) {
-      thumbnail = !isMobile && this.renderThumbnail({
+    if (!this.isMobile) {
+      thumbnail = this.renderThumbnail({
         prefixCls,
         images,
         showThumbnail,
