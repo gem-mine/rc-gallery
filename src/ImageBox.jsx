@@ -17,6 +17,7 @@ export default class extends Component {
     onImageLoadError: PropTypes.func,
     play: PropTypes.func,
     pause: PropTypes.func,
+    setRatio: PropTypes.func,
     currentIndex: PropTypes.number,
     setSwiping: PropTypes.func,
     showThumbnail: PropTypes.bool,
@@ -149,7 +150,7 @@ export default class extends Component {
   }
 
   initImage = () => {
-    const { minZoomSize, maxZoomSize, src } = this.props
+    const { minZoomSize, maxZoomSize, src, setRatio } = this.props
     const imageBox = this.imageBoxRef
     const imageEle = this.imageRef
     const { width } = Util.getPosition({
@@ -162,14 +163,20 @@ export default class extends Component {
     this.initRatio = ratio
     this.imageWidth = imageEle.width
     this.imageHeight = imageEle.height
+    this.transition = 'all .3s'
+    setTimeout(() => {
+      this.transition = 'none'
+    }, 300)
     this.setState({
       loading: false,
       error: false,
       rotate: 0,
       ratio,
-      translateX: (imageBox.offsetWidth - imageEle.offsetWidth) / 2 + 'px', // 居中 todo： 优化
-      translateY: (imageBox.offsetHeight - imageEle.offsetHeight) / 2 + 'px',
+      translateX: `${(imageBox.offsetWidth - imageEle.offsetWidth) / 2}px`,
+      translateY: `${(imageBox.offsetHeight - imageEle.offsetHeight) / 2}px`,
       src
+    }, () => {
+      setRatio(ratio)
     })
   }
 
@@ -196,7 +203,7 @@ export default class extends Component {
   }
 
   handleZoom = (out = false) => {
-    const { zoomStep, minZoomSize, maxZoomSize } = this.props
+    const { zoomStep, minZoomSize, maxZoomSize, setRatio } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
     const ratio = imageRect.width / (Util.isRotation(this.state.rotate) ? this.imageHeight : this.imageWidth)
 
@@ -207,6 +214,8 @@ export default class extends Component {
         ratio: r,
         translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
         translateY: (this.imageBoxRef.offsetHeight - this.imageRef.offsetHeight) / 2 + 'px'
+      }, () => {
+        setRatio(r)
       })
     } else {
       if (out) {
@@ -223,7 +232,7 @@ export default class extends Component {
 
   handleMobileZoom = (e) => {
     const { scale: ratio } = e
-    const { minZoomSize, maxZoomSize } = this.props
+    const { minZoomSize, maxZoomSize, setRatio } = this.props
     const r = ratio * this.cacheRatio
     if (r >= minZoomSize && r <= maxZoomSize) {
       this.props.setSwiping && this.props.setSwiping(r <= this.initRatio)
@@ -231,6 +240,8 @@ export default class extends Component {
         ratio: r,
         translateX: `${(this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2}px`,
         translateY: `${(this.imageBoxRef.offsetHeight - this.imageRef.offsetHeight) / 2}px`
+      }, () => {
+        setRatio(r)
       })
     } else {
       this.setState({
@@ -275,7 +286,10 @@ export default class extends Component {
     } else {
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        ...(getTransformComp(`translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
+        transition: isMobile ? this.transition : 'none',
+        // ie9 不支持translate3d 使用如下形式
+        ...(getTransformComp(
+          `translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
       }
       contentComponent = <img
         ref={node => { this.imageRef = node }}

@@ -81,6 +81,7 @@ class Gallery extends Component {
     left: 0,
     disableZoomIn: false,
     disableZoomOut: false,
+    renderToolbar: false,
     disableNext: true,
     disablePrev: true,
     isPlaying: false, // 是否在播放状态 控制toolbar图标
@@ -137,6 +138,8 @@ class Gallery extends Component {
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
+    // 初始化的时候imageBox的ref还没有
+    this.setState({ renderToolbar: !!this.imageBoxes[0] })
     this.updateThumbnailScroll(this.state.currentIndex)
   }
 
@@ -342,8 +345,12 @@ class Gallery extends Component {
     this.setState({ thumbnailScroll })
   }
 
-  setSwiping = (swiping) => {
-    this.setState({ swiping: swiping })
+  setSwiping = swiping => {
+    this.setState({ swiping })
+  }
+
+  setRatio = ratio => {
+    this.setState({ ratio })
   }
 
   renderImageBox = (imageObj, index) => {
@@ -363,6 +370,7 @@ class Gallery extends Component {
         key={index}
         src={imageObj.original}
         setSwiping={isMobile ? this.setSwiping : null}
+        setRatio={this.setRatio}
         ref={node => { this.imageBoxes[index] = node }}
         handleTogglePlay={this.handleTogglePlay}
         play={this.play}
@@ -509,7 +517,7 @@ class Gallery extends Component {
       disableNext
     })
 
-    const toolbar = this.renderToolbar({
+    const toolbar = this.state.renderToolbar && this.renderToolbar({
       showToolbar,
       prefixCls,
       images,
@@ -520,7 +528,7 @@ class Gallery extends Component {
       isPlaying
     })
 
-    const thumbnail = this.renderThumbnail({
+    const thumbnail = !isMobile && this.renderThumbnail({
       prefixCls,
       images,
       showThumbnail,
@@ -560,6 +568,7 @@ class Gallery extends Component {
                 play={this.play}
                 pause={this.pause}
                 isPlaying={isPlaying}
+                setRatio={this.setRatio}
                 showThumbnail={showThumbnail}
                 ref={node => { this.imageBox = node }}
                 src={images[this.state.currentIndex].original} />
