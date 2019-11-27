@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Util, { isMac, getTransformComp, isMobile } from './util'
+import Util, { isMac, getTransformComp } from './util'
 import Gesture from 'rc-gesture'
 import throttle from 'lodash.throttle'
 
@@ -21,6 +21,7 @@ export default class extends Component {
     currentIndex: PropTypes.number,
     setSwiping: PropTypes.func,
     showThumbnail: PropTypes.bool,
+    isMobile: PropTypes.bool,
     isPlaying: PropTypes.bool,
     mouseWheelZoom: PropTypes.bool // 开启鼠标滚轮放大缩小
   }
@@ -57,8 +58,12 @@ export default class extends Component {
     Util.addEvent(window, 'resize', this.handleResize)
   }
 
+  componentWillUnmount () {
+    Util.removeEvent(window, 'resize', this.handleResize)
+  }
+
   handleMoveStart = e => {
-    if (isMobile) {
+    if (this.props.isMobile) {
       const { srcEvent, moveStatus } = e
       if (!srcEvent) {
         return
@@ -77,15 +82,12 @@ export default class extends Component {
       }
       this.point = [e.pageX || e.clientX, e.pageY || e.clientX]
     }
-    const box = this.imageBoxRef
-    this.imageBoxWidth = box.offsetWidth
-    this.imageBoxHeight = box.offsetHeight
   }
 
   handleMove = (e) => {
     let xDelta = 0
     let yDelta = 0
-    if (isMobile) {
+    if (this.props.isMobile) {
       const { srcEvent, moveStatus } = e
       if (!srcEvent) {
         return
@@ -286,7 +288,7 @@ export default class extends Component {
     } else {
       const inline = {
         visibility: loading ? 'hidden' : 'visible', // top,left为计算时会在左上角闪烁
-        transition: isMobile ? this.transition : 'none',
+        transition: this.props.isMobile ? this.transition : 'none',
         // ie9 不支持translate3d 使用如下形式
         ...(getTransformComp(
           `translateX(${this.state.translateX}) translateY(${this.state.translateY}) scale(${this.state.ratio}) rotate(${this.state.rotate}deg)`))
@@ -316,7 +318,7 @@ export default class extends Component {
         onPanStart={this.handleMoveStart}
         onPanMove={this.handleMove}>
         <div
-          style={isMobile ? {
+          style={this.props.isMobile ? {
             height: '100vh',
             width: '100vw'
           } : {}}

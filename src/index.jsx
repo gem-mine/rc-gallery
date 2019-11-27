@@ -69,6 +69,9 @@ class Gallery extends Component {
 
   imageBoxes = []
 
+  // demo 页iframe中根据浏览器头判断的还是移动端，增加一个属性强改为移动端模式
+  isMobile = isMobile || this.props.displayMode === 'mobile'
+
   state = {
     currentIndex: 0,
     loading: false,
@@ -147,6 +150,9 @@ class Gallery extends Component {
     // 清除自动播放定时器
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
+    }
+    if (this.props.keymap) {
+      Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
     }
     if (this.props.displayMode === 'modal') {
       this.removeScrollingEffect()
@@ -353,7 +359,48 @@ class Gallery extends Component {
     this.setState({ ratio })
   }
 
-  renderImageBox = (imageObj, index) => {
+  renderImageBox = ({
+    images,
+    infinite,
+    currentIndex,
+    swiping,
+    isPlaying,
+    showThumbnail,
+    playSpeed
+  }) => {
+    // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
+    if (this.isMobile && images.length !== 1) {
+      return (
+        <ReactCarousel
+          wrapAround={infinite}
+          decorators={[]}
+          withoutControls
+          dragging={false}
+          slideIndex={currentIndex}
+          swiping={swiping}
+          autoplay={this.props.autoPlay || this.state.autoPlay}
+          autoplayInterval={playSpeed}
+          afterSlide={this.handleAfterSlide}>
+          {images.map((item, index) => {
+            return this.renderImageBoxItem(item, index)
+          })}
+        </ReactCarousel>
+      )
+    } else {
+      return (
+        <ImageBox
+          play={this.play}
+          pause={this.pause}
+          isPlaying={isPlaying}
+          setRatio={this.setRatio}
+          showThumbnail={showThumbnail}
+          ref={node => { this.imageBox = node }}
+          src={images[this.state.currentIndex].original} />
+      )
+    }
+  }
+
+  renderImageBoxItem = (imageObj, index) => {
     const {
       prefixCls,
       spinClass,
@@ -369,12 +416,13 @@ class Gallery extends Component {
       <ImageBox
         key={index}
         src={imageObj.original}
-        setSwiping={isMobile ? this.setSwiping : null}
+        setSwiping={this.isMobile ? this.setSwiping : null}
         setRatio={this.setRatio}
         ref={node => { this.imageBoxes[index] = node }}
         handleTogglePlay={this.handleTogglePlay}
         play={this.play}
         pause={this.pause}
+        isMobile={this.isMobile}
         prefixCls={prefixCls}
         spinClass={spinClass}
         mouseZoomDirection={mouseZoomDirection}
@@ -463,7 +511,7 @@ class Gallery extends Component {
     disablePrev,
     disableNext
   }) => {
-    if (images.length > 1 & !isMobile) {
+    if (images.length > 1 && !this.isMobile) {
       const prevClass = classNames({
         [`${prefixCls}-prev`]: true,
         [`${prefixCls}-disable`]: disablePrev
@@ -513,6 +561,7 @@ class Gallery extends Component {
       nextIcon,
       thumbnailIcon,
       spinClass,
+      playSpeed,
       showToolbar,
       customToolbarItem,
       showThumbnail: renderThumbnail,
@@ -527,6 +576,7 @@ class Gallery extends Component {
       disablePrev,
       disableNext,
       isPlaying,
+      swiping,
       showThumbnail
     } = this.state
     const prevNext = this.renderPrevNext({
@@ -538,26 +588,42 @@ class Gallery extends Component {
       disableNext
     })
 
-    const toolbar = !isMobile || this.state.renderToolbar ? this.renderToolbar({
-      showToolbar,
-      prefixCls,
-      images,
-      customToolbarItem,
-      toolbarConfig,
-      currentIndex,
-      src,
-      isPlaying
-    }) : null
+    let toolbar = null
+    if (this.state.renderToolbar) {
+      toolbar = this.renderToolbar({
+        showToolbar,
+        prefixCls,
+        images,
+        customToolbarItem,
+        toolbarConfig,
+        currentIndex,
+        src,
+        isPlaying
+      })
+    }
 
-    const thumbnail = !isMobile && this.renderThumbnail({
-      prefixCls,
+    let thumbnail = null
+    if (this.isMobile) {
+      thumbnail = !isMobile && this.renderThumbnail({
+        prefixCls,
+        images,
+        showThumbnail,
+        thumbnailIcon,
+        spinClass,
+        currentIndex,
+        renderThumbnail,
+        thumbnailScroll
+      })
+    }
+
+    const imageBoxes = this.renderImageBox({
       images,
-      showThumbnail,
-      thumbnailIcon,
-      spinClass,
+      infinite,
       currentIndex,
-      renderThumbnail,
-      thumbnailScroll
+      swiping,
+      isPlaying,
+      showThumbnail,
+      playSpeed
     })
 
     return (
@@ -569,34 +635,7 @@ class Gallery extends Component {
           style={{
             bottom: (showThumbnail && images.length > 1) ? '100px' : '0'
           }}>
-          {
-            // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
-            (isMobile && images.length !== 1) ? (
-              <ReactCarousel
-                wrapAround={infinite}
-                decorators={[]}
-                withoutControls
-                dragging={false}
-                slideIndex={currentIndex}
-                swiping={this.state.swiping}
-                autoplay={this.props.autoPlay || this.state.autoPlay}
-                autoplayInterval={this.props.playSpeed}
-                afterSlide={this.handleAfterSlide}>
-                {images.map((item, index) => {
-                  return this.renderImageBox(item, index)
-                })}
-              </ReactCarousel>
-            ) : (
-              <ImageBox
-                play={this.play}
-                pause={this.pause}
-                isPlaying={isPlaying}
-                setRatio={this.setRatio}
-                showThumbnail={showThumbnail}
-                ref={node => { this.imageBox = node }}
-                src={images[this.state.currentIndex].original} />
-            )
-          }
+          {imageBoxes}
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
             {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
