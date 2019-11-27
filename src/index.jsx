@@ -49,7 +49,7 @@ class Gallery extends Component {
         description: null
       }
     ],
-    showToolbar: true,
+    showToolbar: !isMobile,
     toolbarConfig: {
       autoPlay: true,
       rotateLeft: true,
@@ -280,7 +280,7 @@ class Gallery extends Component {
   }
 
   handleTogglePlay = () => {
-    if (this.intervalId) {
+    if (this.state.isPlaying) {
       this.pause()
     } else {
       this.play()
@@ -483,6 +483,27 @@ class Gallery extends Component {
     }
   }
 
+  handleAfterSlide = index => {
+    const {
+      infinite,
+      images,
+      onMovePrev,
+      onMoveNext
+    } = this.props
+    const { autoPlay, currentIndex } = this.state
+    // 播放到最后一张暂停
+    if (!infinite && autoPlay && index === images.length - 1) {
+      this.pause()
+    }
+    if (index === currentIndex + 1 && onMoveNext) {
+      onMoveNext(index)
+    }
+    if (index === currentIndex - 1 && onMovePrev) {
+      onMovePrev(index)
+    }
+    this.setState({ currentIndex: index })
+  }
+
   render () {
     const {
       prefixCls,
@@ -517,7 +538,7 @@ class Gallery extends Component {
       disableNext
     })
 
-    const toolbar = this.state.renderToolbar && this.renderToolbar({
+    const toolbar = !isMobile || this.state.renderToolbar ? this.renderToolbar({
       showToolbar,
       prefixCls,
       images,
@@ -526,7 +547,7 @@ class Gallery extends Component {
       currentIndex,
       src,
       isPlaying
-    })
+    }) : null
 
     const thumbnail = !isMobile && this.renderThumbnail({
       prefixCls,
@@ -549,16 +570,18 @@ class Gallery extends Component {
             bottom: (showThumbnail && images.length > 1) ? '100px' : '0'
           }}>
           {
-            isMobile ? (
+            // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
+            (isMobile && images.length !== 1) ? (
               <ReactCarousel
                 wrapAround={infinite}
                 decorators={[]}
                 withoutControls
                 dragging={false}
+                slideIndex={currentIndex}
                 swiping={this.state.swiping}
-                afterSlide={index => {
-                  this.setState({ currentIndex: index })
-                }}>
+                autoplay={this.props.autoPlay || this.state.autoPlay}
+                autoplayInterval={this.props.playSpeed}
+                afterSlide={this.handleAfterSlide}>
                 {images.map((item, index) => {
                   return this.renderImageBox(item, index)
                 })}
