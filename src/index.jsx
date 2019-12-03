@@ -366,7 +366,8 @@ class Gallery extends Component {
     swiping,
     isPlaying,
     showThumbnail,
-    playSpeed
+    playSpeed,
+    prefixCls
   }) => {
     // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
     if (this.isMobile && images.length !== 1) {
@@ -375,7 +376,7 @@ class Gallery extends Component {
           wrapAround={infinite}
           decorators={[]}
           withoutControls
-          dragging={false}
+          dragging={swiping}
           slideIndex={currentIndex}
           swiping={swiping}
           autoplay={this.props.autoPlay || this.state.autoPlay}
@@ -391,6 +392,7 @@ class Gallery extends Component {
         <ImageBox
           play={this.play}
           pause={this.pause}
+          prefixCls={prefixCls}
           isPlaying={isPlaying}
           setRatio={this.setRatio}
           showThumbnail={showThumbnail}
@@ -415,6 +417,7 @@ class Gallery extends Component {
     return (
       <ImageBox
         key={index}
+        index={index}
         src={imageObj.original}
         setSwiping={this.isMobile ? this.setSwiping : null}
         setRatio={this.setRatio}
@@ -623,7 +626,8 @@ class Gallery extends Component {
       swiping,
       isPlaying,
       showThumbnail,
-      playSpeed
+      playSpeed,
+      prefixCls
     })
 
     return (

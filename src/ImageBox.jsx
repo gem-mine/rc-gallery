@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import Util, { isMac, getTransformComp } from './util'
+import Util, { isMac, isMobile, getTransformComp } from './util'
 import Gesture from 'rc-gesture'
 import throttle from 'lodash.throttle'
 
@@ -19,6 +19,7 @@ export default class extends Component {
     pause: PropTypes.func,
     setRatio: PropTypes.func,
     currentIndex: PropTypes.number,
+    index: PropTypes.number,
     setSwiping: PropTypes.func,
     showThumbnail: PropTypes.bool,
     isMobile: PropTypes.bool,
@@ -49,6 +50,8 @@ export default class extends Component {
     ratio: 1
   }
 
+  transition = 'none'
+
   constructor (props) {
     super(props)
     this.handleResize = throttle(this.initImage, 300)
@@ -63,7 +66,7 @@ export default class extends Component {
   }
 
   handleMoveStart = e => {
-    if (this.props.isMobile) {
+    if (isMobile) {
       const { srcEvent, moveStatus } = e
       if (!srcEvent) {
         return
@@ -87,7 +90,7 @@ export default class extends Component {
   handleMove = (e) => {
     let xDelta = 0
     let yDelta = 0
-    if (this.props.isMobile) {
+    if (isMobile) {
       const { srcEvent, moveStatus } = e
       if (!srcEvent) {
         return
@@ -152,7 +155,7 @@ export default class extends Component {
   }
 
   initImage = () => {
-    const { minZoomSize, maxZoomSize, src, setRatio } = this.props
+    const { minZoomSize, maxZoomSize, src } = this.props
     const imageBox = this.imageBoxRef
     const imageEle = this.imageRef
     const { width } = Util.getPosition({
@@ -165,10 +168,6 @@ export default class extends Component {
     this.initRatio = ratio
     this.imageWidth = imageEle.width
     this.imageHeight = imageEle.height
-    this.transition = 'all .3s'
-    setTimeout(() => {
-      this.transition = 'none'
-    }, 300)
     this.setState({
       loading: false,
       error: false,
@@ -178,7 +177,9 @@ export default class extends Component {
       translateY: `${(imageBox.offsetHeight - imageEle.offsetHeight) / 2}px`,
       src
     }, () => {
-      setRatio(ratio)
+      if (this.props.currentIndex === this.props.index) {
+        this.props.setRatio(this.state.ratio)
+      }
     })
   }
 
@@ -260,6 +261,10 @@ export default class extends Component {
     }
     if (prevProps.currentIndex !== this.props.currentIndex || prevProps.showThumbnail !== this.props.showThumbnail) {
       this.initImage()
+      this.transition = 'all .3s'
+      setTimeout(() => {
+        this.transition = 'none'
+      }, 300)
     }
   }
 
