@@ -1,15 +1,13 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import ReactDOM from 'react-dom'
-import Util from './util'
+import Util, { isMobile } from './util'
 import Toolbar from './Toolbar'
 import ImageBox from './ImageBox'
 import Footer from './Footer'
 import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
-
-const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
+import ReactCarousel from 'rmc-nuka-carousel'
 
 class Gallery extends Component {
   static propTypes = {
@@ -23,7 +21,6 @@ class Gallery extends Component {
     infinite: PropTypes.bool,
     showThumbnail: PropTypes.bool,
     keymap: PropTypes.bool,
-    src: PropTypes.string,
     onClose: PropTypes.func,
     onMovePrev: PropTypes.func,
     onMoveNext: PropTypes.func,
@@ -38,6 +35,13 @@ class Gallery extends Component {
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
     nextIcon: PropTypes.node,
+    zoomInIcon: PropTypes.object,
+    zoomOutIcon: PropTypes.object,
+    rotateLeftIcon: PropTypes.object,
+    rotateRightIcon: PropTypes.object,
+    pauseIcon: PropTypes.object,
+    playIcon: PropTypes.object,
+    spinClass: PropTypes.node,
     displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
     mouseZoomDirection: PropTypes.func
@@ -51,8 +55,7 @@ class Gallery extends Component {
         description: null
       }
     ],
-    src: undefined,
-    showToolbar: true,
+    showToolbar: !isMobile,
     toolbarConfig: {
       autoPlay: true,
       rotateLeft: true,
@@ -65,23 +68,19 @@ class Gallery extends Component {
     startIndex: 0,
     autoPlay: false,
     playSpeed: 2000,
-    showThumbnail: true,
-    zoomStep: 0.2,
-    maxZoomSize: 3,
-    minZoomSize: 0.2,
+    showThumbnail: !isMobile,
     customToolbarItem: () => {},
-    displayMode: 'modal',
-    mouseWheelZoom: true,
-    mouseZoomDirection: (e) => {
-      // 根据系统，win下滚轮向上放大，向下缩小；mac下相反
-      return isMac ? e.deltaY < 0 : e.deltaY > 0
-    }
+    displayMode: 'modal'
   }
+
+  imageBoxes = []
+
+  // demo 页iframe中根据浏览器头判断的还是移动端，增加一个属性强改为移动端模式
+  isMobile = isMobile || this.props.displayMode === 'mobile'
 
   state = {
     currentIndex: 0,
-    src: undefined,
-    loading: true,
+    loading: false,
     error: false,
     width: 0,
     height: 0,
@@ -107,7 +106,7 @@ class Gallery extends Component {
       currentIndex = props.startIndex
     }
 
-    let src = props.src
+    let src = ''
     props.images.some((v, i) => {
       if (v.original === src) {
         currentIndex = i
@@ -130,8 +129,7 @@ class Gallery extends Component {
       showThumbnail,
       autoPlay,
       keymap,
-      displayMode,
-      mouseWheelZoom
+      displayMode
     } = this.props
 
     Util.addEvent(window, 'resize', this.handleResize)
@@ -145,65 +143,27 @@ class Gallery extends Component {
     if (keymap) {
       Util.addEvent(document.body, 'keyup', this.handleKeyUp)
     }
-
-    this.imageBox = ReactDOM.findDOMNode(this.imageBoxRef)
-    if (this.imageBoxRef.imageRef) {
-      this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-      // 鼠标移入图片内时停止自动播放
-      Util.addEvent(this.image, 'mouseover', this.handleMouseOver)
-      Util.addEvent(this.image, 'mouseout', this.handleMouseOut)
-
-      // 拖动图片移动（如果事件绑定在document上，在inline模式下阻止默认行为无法选中文本）
-      Util.addEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.addEvent(this.image, 'mousemove', this.handleMove)
-      Util.addEvent(this.image, 'mouseup', this.handleMoveEnd)
-
-      if (mouseWheelZoom) {
-        // 鼠标滚轮缩放事件
-        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.addEvent(this.image, 'wheel', this.handleWheel)
-      }
-    }
     if (displayMode === 'modal') {
       this.addScrollingEffect()
     }
+    // 初始化的时候imageBox的ref还没有
     this.updateThumbnailScroll(this.state.currentIndex)
-    this.loadImage(this.state.src)
   }
 
   componentWillUnmount () {
-    const { mouseWheelZoom } = this.props
-
-    Util.removeEvent(window, 'resize', this.handleResize)
-
-    // Util.removeEvent(document, 'mousewheel', this.handleWheel)
-    Util.removeEvent(document, 'wheel', this.handleWheel)
-    if (this.props.keymap) {
-      Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
-    }
-    if (this.imageBoxRef.imageRef) {
-      this.image = ReactDOM.findDOMNode(this.imageBoxRef.imageRef)
-      Util.removeEvent(this.image, 'mouseover', this.handleMouseOver)
-      Util.removeEvent(this.image, 'mouseover', this.handleMouseOut)
-
-      Util.removeEvent(this.image, 'mousedown', this.handleMoveStart)
-      Util.removeEvent(this.image, 'mousemove', this.handleMove)
-      Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
-
-      if (mouseWheelZoom) {
-        Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.removeEvent(this.image, 'wheel', this.handleWheel)
-      }
-    }
     // 清除自动播放定时器
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
+    }
+    if (this.props.keymap) {
+      Util.removeEvent(document.body, 'keyup', this.handleKeyUp)
     }
     if (this.props.displayMode === 'modal') {
       this.removeScrollingEffect()
     }
   }
 
+  // 弹出框的滚动条处理
   addScrollingEffect = () => {
     this.checkScrollbar()
     this.setScrollbar()
@@ -216,11 +176,7 @@ class Gallery extends Component {
   }
 
   checkScrollbar = () => {
-    let fullWindowWidth = window.innerWidth
-    if (!fullWindowWidth) { // workaround for missing window.innerWidth in IE8
-      const documentElementRect = document.documentElement.getBoundingClientRect()
-      fullWindowWidth = documentElementRect.right - Math.abs(documentElementRect.left)
-    }
+    const fullWindowWidth = window.innerWidth
     this.bodyIsOverflowing = document.body.clientWidth < fullWindowWidth
     if (this.bodyIsOverflowing) {
       this.scrollbarWidth = Util.getScrollBarSize()
@@ -261,28 +217,7 @@ class Gallery extends Component {
   }
 
   handleResize = () => {
-    if (!this.state.error) {
-      const { width, height, rotate } = this.state
-      const box = this.imageBox
-      const { top, left } = Util.getZoomOffset({ width, height }, box, Util.isRotation(rotate))
-      this.setState({
-        top,
-        left
-      })
-    }
     this.updateThumbnailScroll(this.state.currentIndex)
-  }
-
-  handleWheel = e => {
-    // inline模式的时候阻止页面滚动
-    e.preventDefault()
-    if (!this.state.error) {
-      const box = this.imageBoxRef.imageRef || null
-      if (Util.isInside(e, box) && e.deltaY !== 0) {
-        const { mouseZoomDirection } = this.props
-        this.handleZoom(mouseZoomDirection(e))
-      }
-    }
   }
 
   handleNext = () => {
@@ -291,6 +226,10 @@ class Gallery extends Component {
     if (this.props.onMoveNext) {
       this.props.onMoveNext(currentIndex)
     }
+  }
+
+  setImageBox = (ref) => {
+    this.imageBox = ref
   }
 
   handlePrev = () => {
@@ -302,6 +241,9 @@ class Gallery extends Component {
   }
 
   jumpTo = (index) => {
+    if (index === this.state.currentIndex) {
+      return
+    }
     const count = this.props.images.length - 1
 
     let nextIndex = index
@@ -313,176 +255,10 @@ class Gallery extends Component {
     if (nextIndex !== this.state.currentIndex) {
       this.setState({
         currentIndex: nextIndex,
-        loading: true,
         disableNext: index >= count && !this.props.infinite,
         disablePrev: index <= 0 && !this.props.infinite
       })
-      this.loadImage(this.props.images[nextIndex].original)
     }
-  }
-
-  handleMoveStart = e => {
-    Util.stopDefault(e)
-    const event = e || window.event
-    const box = this.imageBox
-    const target = event.target || event.srcElement
-    if (!Util.isInside(event, box)) {
-      return
-    }
-    if (!target || target.tagName.toUpperCase() !== 'IMG') {
-      return
-    }
-    this.point = [event.pageX || event.clientX, event.pageY || event.clientX]
-    this.boxWidth = box.offsetWidth
-    this.boxHeight = box.offsetHeight
-  }
-
-  handleMoveEnd = e => {
-    Util.stopDefault(e)
-    this.point = null
-  }
-
-  handleMove = e => {
-    Util.stopDefault(e)
-    if (!this.point) {
-      return
-    }
-    const event = e || window.event
-    const state = this.state
-    let x, y
-    x = (event.pageX || event.clientX) - this.point[0]
-    y = (event.pageY || event.clientY) - this.point[1]
-    this.point = [event.pageX || event.clientX, event.pageY || event.clientY]
-
-    const left = state.left + x
-    const top = state.top + y
-    const { width, height } = state
-    if (Util.isRotation(state.rotate)) {
-      if (left >= (height - width) / 2 || left <= this.boxWidth - (height + width) / 2) {
-        x = 0
-      }
-      if (top >= (width - height) / 2 || top <= this.boxHeight - (width + height) / 2) {
-        y = 0
-      }
-    } else {
-      if (left >= 0 || left <= this.boxWidth - state.width) {
-        x = 0
-      }
-      if (top >= 0 || top <= this.boxHeight - state.height) {
-        y = 0
-      }
-    }
-
-    this.setState({
-      top: state.top + y,
-      left: state.left + x
-    })
-  }
-
-  handleMouseOver = () => {
-    const { isPlaying } = this.state
-    this.isPlayingBefore = isPlaying
-    if (isPlaying) {
-      this.pause()
-    }
-  }
-
-  handleMouseOut = () => {
-    this.point = null // inline模式时鼠标图片拖拽鼠标移动到图片外问题
-    if (this.isPlayingBefore) {
-      this.play()
-    }
-  }
-  loadImage = src => {
-    const img = new window.Image()
-    const that = this
-    const { minZoomSize, maxZoomSize } = this.props
-    img.onload = function () {
-      const box = that.imageBox
-      const { width, height, top, left } = Util.getPosition({
-        width: this.width,
-        height: this.height,
-        minZoomSize,
-        maxZoomSize
-      }, box)
-      const ratio = width / this.width
-      that.imageWidth = this.width
-      that.imageHeight = this.height
-      that.setState({
-        loading: false,
-        error: false,
-        rotate: 0,
-        disableZoomOut: ratio <= minZoomSize,
-        disableZoomIn: ratio >= maxZoomSize,
-        ratio,
-        width,
-        height,
-        top,
-        left,
-        src
-      })
-      if (that.props.onImageLoad) {
-        that.props.onImageLoad()
-      }
-    }
-    img.onerror = () => {
-      this.setState({
-        loading: false,
-        error: true,
-        src
-      })
-      if (that.props.onImageLoadError) {
-        that.props.onImageLoadError()
-      }
-    }
-    img.src = src // ie8不触发onLoad问题
-  }
-
-  handleZoom = (out = false) => {
-    const { width, rotate } = this.state
-    const { zoomStep, minZoomSize, maxZoomSize } = this.props
-    const ratio = Util.divide(width, this.imageWidth)
-    if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
-      const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
-      const w = this.imageWidth * r
-      const h = this.imageHeight * r
-      const box = this.imageBox
-      const offset = Util.getZoomOffset({ width: w, height: h }, box, Util.isRotation(rotate))
-      this.setState({
-        width: w,
-        height: h,
-        top: offset.top,
-        left: offset.left,
-        disableZoomOut: r <= minZoomSize,
-        disableZoomIn: r >= maxZoomSize,
-        ratio: r
-      })
-    } else {
-      if (out) {
-        this.setState({
-          disableZoomOut: true
-        })
-      } else {
-        this.setState({
-          disableZoomIn: true
-        })
-      }
-    }
-  }
-
-  handleRotate = angle => {
-    const rotate = this.state.rotate + angle
-    const box = this.imageBox
-    const { top, left } = Util.getZoomOffset(
-      { width: this.state.width, height: this.state.height },
-      box,
-      Util.isRotation(rotate)
-    )
-    this.setState({
-      rotate,
-      top,
-      left
-    })
   }
 
   canSlideLeft () {
@@ -494,7 +270,7 @@ class Gallery extends Component {
       this.state.currentIndex < this.props.images.length - 1
   }
 
-  play () {
+  play = () => {
     if (!this.intervalId) {
       const { playSpeed } = this.props
       this.setState({ isPlaying: true })
@@ -509,7 +285,7 @@ class Gallery extends Component {
     }
   }
 
-  pause () {
+  pause = () => {
     if (this.intervalId) {
       window.clearInterval(this.intervalId)
       this.intervalId = null
@@ -518,7 +294,7 @@ class Gallery extends Component {
   }
 
   handleTogglePlay = () => {
-    if (this.intervalId) {
+    if (this.state.isPlaying) {
       this.pause()
     } else {
       this.play()
@@ -583,70 +359,260 @@ class Gallery extends Component {
     this.setState({ thumbnailScroll })
   }
 
-  render () {
+  setSwiping = swiping => {
+    this.setState({ swiping })
+  }
+
+  setImageStatus = ({ ...status }) => {
+    this.setState({ ...status })
+  }
+
+  renderImageBox = () => {
+    const {
+      images,
+      infinite,
+      showThumbnail,
+      playSpeed,
+      prefixCls
+    } = this.props
+    const {
+      currentIndex,
+      swiping,
+      isPlaying
+    } = this.state
+    // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
+    if (this.isMobile && images.length !== 1) {
+      return (
+        <ReactCarousel
+          wrapAround={infinite}
+          decorators={[]}
+          withoutControls
+          dragging={swiping}
+          slideIndex={currentIndex}
+          swiping={swiping}
+          autoplay={this.props.autoPlay || this.state.autoPlay}
+          autoplayInterval={playSpeed}
+          afterSlide={this.handleAfterSlide}>
+          {images.map((item, index) => {
+            return this.renderImageBoxItem(item, index)
+          })}
+        </ReactCarousel>
+      )
+    } else {
+      return (
+        <ImageBox
+          play={this.play}
+          pause={this.pause}
+          prefixCls={prefixCls}
+          isPlaying={isPlaying}
+          setImageBox={this.setImageBox}
+          setImageStatus={this.setImageStatus}
+          showThumbnail={showThumbnail}
+          src={images[this.state.currentIndex].original} />
+      )
+    }
+  }
+
+  renderImageBoxItem = (imageObj, index) => {
     const {
       prefixCls,
-      showToolbar,
-      showThumbnail,
-      images,
-      closeIcon,
-      prevIcon,
-      nextIcon,
-      displayMode
+      spinClass,
+      mouseZoomDirection,
+      maxZoomSize,
+      minZoomSize,
+      onImageLoad,
+      zoomStep,
+      onImageLoadError
     } = this.props
+    const { currentIndex } = this.state
+    return (
+      <ImageBox
+        key={index}
+        index={index}
+        src={imageObj.original}
+        setSwiping={this.isMobile ? this.setSwiping : null}
+        setImageBox={this.setImageBox}
+        setImageStatus={this.setImageStatus}
+        handleTogglePlay={this.handleTogglePlay}
+        play={this.play}
+        pause={this.pause}
+        isMobile={this.isMobile}
+        prefixCls={prefixCls}
+        spinClass={spinClass}
+        mouseZoomDirection={mouseZoomDirection}
+        zoomStep={zoomStep}
+        maxZoomSize={maxZoomSize}
+        minZoomSize={minZoomSize}
+        onImageLoad={onImageLoad}
+        currentIndex={currentIndex}
+        onImageLoadError={onImageLoadError} />
+    )
+  }
 
-    let prev = null
-    let next = null
-    if (images.length > 1) {
-      const { disablePrev, disableNext } = this.state
+  renderToolbar = () => {
+    const {
+      showToolbar,
+      prefixCls,
+      images,
+      customToolbarItem,
+      zoomInIcon,
+      zoomOutIcon,
+      rotateLeftIcon,
+      rotateRightIcon,
+      pauseIcon,
+      playIcon,
+      toolbarConfig
+    } = this.props
+    const {
+      currentIndex,
+      src,
+      isPlaying,
+      loading,
+      error,
+      disableZoomIn,
+      disableZoomOut
+    } = this.state
+    if (!showToolbar) {
+      return
+    }
+    let handleZoom = null
+    let handleRotate = null
+    if (this.imageBox) {
+      handleZoom = this.imageBox.handleZoom
+      handleRotate = this.imageBox.handleRotate
+    }
+
+    return (
+      <Toolbar
+        prefixCls={prefixCls}
+        src={src}
+        toolbarConfig={toolbarConfig}
+        currentIndex={currentIndex}
+        images={images}
+        isPlaying={isPlaying}
+        customToolbarItem={customToolbarItem}
+        handleZoom={handleZoom}
+        handleRotate={handleRotate}
+        loading={loading}
+        error={error}
+        zoomInIcon={zoomInIcon}
+        zoomOutIcon={zoomOutIcon}
+        rotateLeftIcon={rotateLeftIcon}
+        rotateRightIcon={rotateRightIcon}
+        pauseIcon={pauseIcon}
+        playIcon={playIcon}
+        disableZoomIn={disableZoomIn}
+        disableZoomOut={disableZoomOut}
+        handleTogglePlay={this.handleTogglePlay} />
+    )
+  }
+
+  renderThumbnail = () => {
+    const {
+      prefixCls,
+      images,
+      showThumbnail: renderThumbnail,
+      thumbnailIcon,
+      spinClass
+    } = this.props
+    const {
+      currentIndex,
+      thumbnailScroll,
+      showThumbnail
+    } = this.state
+
+    if (this.isMobile) {
+      return null
+    }
+    if (images.length > 1 && renderThumbnail) {
+      return (
+        <Thumbnail
+          currentIndex={currentIndex}
+          showThumbnail={showThumbnail}
+          thumbnailIcon={thumbnailIcon}
+          spinClass={spinClass}
+          prefixCls={prefixCls}
+          style={{ height: showThumbnail ? '100px' : '0' }}
+          ref={node => { this.thumbnailComponent = node }}
+          images={images}
+          handleThumbnailItemClick={this.handleThumbnailItemClick}
+          handleShowThumbnail={this.handleShowThumbnail}
+          thumbnailScroll={thumbnailScroll}
+          thumbnailScrollDuration={this.thumbnailScrollDuration} />
+      )
+    }
+  }
+
+  renderPrevNext = () => {
+    const {
+      images,
+      prefixCls,
+      prevIcon,
+      nextIcon
+    } = this.props
+    const {
+      disablePrev,
+      disableNext
+    } = this.state
+    if (images.length > 1 && !this.isMobile) {
       const prevClass = classNames({
         [`${prefixCls}-prev`]: true,
         [`${prefixCls}-disable`]: disablePrev
       })
-      prev = (
-        <div className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
-          { prevIcon || <i className="anticon anticon-left" /> }
-        </div>
-      )
-
       const nextClass = classNames({
         [`${prefixCls}-next`]: true,
         [`${prefixCls}-disable`]: disableNext
       })
-      next = (
-        <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
+      return [
+        <div key="prev" className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
+          { prevIcon || <i className="anticon anticon-left" /> }
+        </div>,
+        <div key="next" className={nextClass} onClick={disableNext ? null : this.handleNext}>
           { nextIcon || <i className="anticon anticon-right" /> }
         </div>
-      )
+      ]
     }
+  }
 
-    let toolbar = null
-    if (showToolbar) {
-      toolbar = (
-        <Toolbar
-          {...this.props}
-          {...this.state}
-          handleZoom={this.handleZoom}
-          handleRotate={this.handleRotate}
-          handleTogglePlay={this.handleTogglePlay} />
-      )
+  handleAfterSlide = index => {
+    const {
+      infinite,
+      images,
+      onMovePrev,
+      onMoveNext
+    } = this.props
+    const { autoPlay, currentIndex } = this.state
+    // 播放到最后一张暂停
+    if (!infinite && autoPlay && index === images.length - 1) {
+      this.pause()
     }
+    if (index === currentIndex + 1 && onMoveNext) {
+      onMoveNext(index)
+    }
+    if (index === currentIndex - 1 && onMovePrev) {
+      onMovePrev(index)
+    }
+    this.setState({ currentIndex: index })
+  }
 
-    let thumbnail = null
-    if (images.length > 1 && showThumbnail) {
-      thumbnail = (
-        <Thumbnail
-          {...this.props}
-          {...this.state}
-          style={{ height: this.state.showThumbnail ? '100px' : '0' }}
-          ref={node => { this.thumbnailComponent = node }}
-          images={this.props.images}
-          handleThumbnailItemClick={this.handleThumbnailItemClick}
-          handleShowThumbnail={this.handleShowThumbnail}
-          thumbnailScroll={this.state.thumbnailScroll}
-          thumbnailScrollDuration={this.thumbnailScrollDuration} />
-      )
-    }
+  render () {
+    const {
+      prefixCls,
+      images,
+      closeIcon,
+      displayMode
+    } = this.props
+    const {
+      showThumbnail
+    } = this.state
+
+    const prevNext = this.renderPrevNext()
+
+    const toolbar = this.renderToolbar()
+
+    const thumbnail = this.renderThumbnail()
+
+    const imageBoxes = this.renderImageBox()
 
     return (
       <div className={classNames(prefixCls, {
@@ -654,15 +620,16 @@ class Gallery extends Component {
       })}>
         <div
           className={`${prefixCls}-content`}
-          style={{ bottom: (this.state.showThumbnail && images.length > 1) ? '100px' : '0' }}>
-          <ImageBox ref={(node) => { this.imageBoxRef = node }} {...this.props} {...this.state} />
+          style={{
+            bottom: (showThumbnail && images.length > 1) ? '100px' : '0'
+          }}>
+          {imageBoxes}
           <span onClick={this.handleClose} className={`${prefixCls}-close`}>
             {'closeIcon' in this.props ? closeIcon : <i className={`anticon anticon-close`} />}
           </span>
+          {prevNext}
           {toolbar}
-          {prev}
-          {next}
-          <Footer {...this.props} {...this.state} />
+          <Footer {...this.state} {...this.props} />
         </div>
         {thumbnail}
       </div>

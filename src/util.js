@@ -2,7 +2,9 @@
  * 一些辅助工具函数
  */
 let scrollBarCached
-
+export const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
+export const isMobile = /ipad|iphone|midp|rv:1.2.3.4|ucweb|android|windows ce|windows mobile/.test(navigator.userAgent.toLowerCase())
+export const isIE9 = !window.atob
 export default {
   getPosition ({ width, height, minZoomSize, maxZoomSize }, box) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
@@ -10,7 +12,7 @@ export default {
     let w, h
     if (width > boxWidth) {
       if (height > boxHeight) {
-        // 如果图片宽高大于容器，取取图片宽或高将容器一边填满
+        // 如果图片宽高大于容器，取图片宽或高将容器一边填满
         const r1 = width / boxWidth
         const r2 = height / boxHeight
         if (r1 > r2) {
@@ -28,7 +30,6 @@ export default {
         w = width
       }
     }
-
     // 设置了最小缩放比例时，如果计算的宽高小于它，那么使用设置的最小缩放比例
     if (minZoomSize && (w / width) < minZoomSize) {
       w = width * minZoomSize
@@ -56,6 +57,7 @@ export default {
   },
   getZoomOffset ({ width, height }, box, rotate = false) {
     const [boxWidth, boxHeight] = [box.offsetWidth, box.offsetHeight]
+
     let top, left
     if (rotate) {
       if (width > boxHeight) {
@@ -87,6 +89,12 @@ export default {
     }
   },
 
+  getZoomPos () {
+    // todo：如果小于视口的宽高的情况下
+    // left: 50; top: 50;translateX(-50%) translateY(-50%)
+    // 如果大于的情况下
+  },
+
   isInside (e, box) {
     if (!box) {
       return false
@@ -108,7 +116,7 @@ export default {
     const n = parseInt(this.divide(v, zoomStep), 10)
     if (out) {
       // 缩小
-      return Math.max(minZoomSize, (n - 1) * zoomStep)
+      return Math.max(minZoomSize, this.multiple(n - 1, zoomStep))
     } else {
       // 放大
       return Math.min(maxZoomSize, this.multiple(n + 1, zoomStep))
@@ -201,5 +209,38 @@ export default {
     } else {
       event.returnValue = false
     }
+  },
+
+  getComputedTranslateXY (el) {
+    if (!window.getComputedStyle) {
+      return
+    }
+    const style = window.getComputedStyle(el)
+    const transform = style.transform || style.WebkitTransform || style.MozTransform || style.msTransform
+
+    let mat = transform.match(/^matrix3d\((.+)\)$/)
+    if (mat) {
+      return parseFloat(mat[1].split(', ')[13])
+    }
+    mat = transform.match(/^matrix\((.+)\)$/)
+    if (mat) {
+      return [parseFloat(mat[1].split(', ')[4]), parseFloat(mat[1].split(', ')[5])]
+    }
+
+    if (isIE9) {
+      const matX = transform.match(/translateX\(([-\][\d]+(px))\)/)
+      const matY = transform.match(/translateY\(([-\][\d]+(px))\)/)
+      if (matX && matX[1] && matY && matY[1]) {
+        return [parseFloat(matX[1]), parseFloat(matY[1])]
+      }
+    }
+  }
+}
+export function getTransformComp (v) {
+  return {
+    transform: v,
+    WebkitTransform: v,
+    MozTransform: v,
+    msTransform: v
   }
 }

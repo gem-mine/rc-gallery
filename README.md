@@ -38,7 +38,6 @@ npm run site
 
 基本用法。
 
-
 ```jsx
 import "rc-gallery/lib/style/";
 import Gallery from 'rc-gallery'
@@ -88,8 +87,9 @@ class App extends React.Component {
     if (this.state.isGallery) {
       gallery = (
         <Gallery
-          maxZoomSize={1}
-          minZoomSize={0.9}
+          showToolbar
+          maxZoomSize={2.5}
+          minZoomSize={0.3}
           zoomStep={0.4}
           images={images}
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}
@@ -283,7 +283,6 @@ class App extends React.Component {
 ReactDOM.render(<App />, mountNode);
 ```
 
-
 ### 配置工具栏
 
 自定义工具栏
@@ -340,6 +339,8 @@ class App extends React.Component {
       gallery = (
         <Gallery
           images={images}
+          showToolbar
+          rotateLeftIcon={<span>左转</span>}
           toolbarConfig={{
             rotateLeft: true,
             rotateRight: true,
@@ -483,7 +484,6 @@ class App extends React.Component {
       gallery = (
         <Gallery
           images={images}
-
           onClose={this.closeGallery} />
       )
     }
@@ -574,7 +574,7 @@ ReactDOM.render(<App />, mountNode);
 
 ### 在文档中显示
 
-在文档中显示。
+在文档中显示。移动端不支持
 
 
 ```jsx
@@ -651,10 +651,10 @@ ReactDOM.render(<App />, mountNode);
 
 | 参数        | 说明                                                | 类型        | 默认值 |
 |----------- |---------------------------------------------------------  | ---------- |-------|
-| displayMode | 显示模式, 有全屏遮罩模式和插入文档流模式        | Enum{ 'inline', 'modal' }  |  `modal`  |
+| displayMode | 显示模式, 有全屏遮罩模式和插入文档流模式（移动端不支持）        | Enum{ 'inline', 'modal' }  |  `modal`  |
 | images | 数组对象，存放图片信息 | [Gallery.images[]](#images) | 无 |
 | showToolbar | 是否显示工具条 | boolean | true |
-| showThumbnail | 是否显示缩略图 | boolean | true |
+| showThumbnail | 是否显示缩略图（移动端不显示） | boolean | true |
 | keymap | 是否开启默认键盘事件（esc关闭，左右选图片） | boolean | true |
 | startIndex | 初始进入显示第几张图 | number | 0 |
 | toolbarConfig | 配置工具栏 | object | toolbarConfig: { autoPlay: true, rotateLeft: true, rotateRight: true, zoomIn: true, zoomOut: true } |
@@ -692,3 +692,10 @@ ReactDOM.render(<App />, mountNode);
 | original   | 图片的原图地址                              |      string      | 无     |
 | thumbnail   | 图片的缩略图地址，若未配置，则使用原图       |     string      | 无     |
 | description   | 图片的描述                               |     react.element \| string      | 无     |
+
+## 移动端
+
+移动端与PC端有几点不同
+1. 顶部工具栏默认关闭
+1. 左右看图箭头取消，但可以通过手势左右滑动进行图片前后张切换
+1. 无底部缩略图

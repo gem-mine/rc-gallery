@@ -39,7 +39,9 @@
     height: 100%;
     background-repeat: no-repeat;
     width: 100%;
-    position: absolute;
+    //position: absolute;
+    position: relative;
+    flex-shrink: 0;
     opacity: 1;
     overflow: hidden;
 
@@ -49,6 +51,7 @@
       background-repeat: no-repeat;
       width: 40px;
       height: 40px;
+      z-index: 9;
     }
 
     &-error {
@@ -60,6 +63,7 @@
 
     > img {
       position: absolute;
+      touch-action: none;
     }
   }
 
@@ -72,6 +76,7 @@
     text-align: center;
     height: 0;
     font-size: 16px;
+    z-index: 9;
 
     &-box {
       display: inline-block;
