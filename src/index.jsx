@@ -35,6 +35,12 @@ class Gallery extends Component {
     thumbnailIcon: PropTypes.node,
     prevIcon: PropTypes.node,
     nextIcon: PropTypes.node,
+    zoomInIcon: PropTypes.object,
+    zoomOutIcon: PropTypes.object,
+    rotateLeftIcon: PropTypes.object,
+    rotateRightIcon: PropTypes.object,
+    pauseIcon: PropTypes.object,
+    playIcon: PropTypes.object,
     spinClass: PropTypes.node,
     displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
@@ -84,7 +90,6 @@ class Gallery extends Component {
     left: 0,
     disableZoomIn: false,
     disableZoomOut: false,
-    renderToolbar: false,
     disableNext: true,
     disablePrev: true,
     isPlaying: false, // 是否在播放状态 控制toolbar图标
@@ -142,7 +147,6 @@ class Gallery extends Component {
       this.addScrollingEffect()
     }
     // 初始化的时候imageBox的ref还没有
-    this.setState({ renderToolbar: !!this.imageBoxes[0] })
     this.updateThumbnailScroll(this.state.currentIndex)
   }
 
@@ -222,6 +226,10 @@ class Gallery extends Component {
     if (this.props.onMoveNext) {
       this.props.onMoveNext(currentIndex)
     }
+  }
+
+  setImageBox = (ref) => {
+    this.imageBox = ref
   }
 
   handlePrev = () => {
@@ -355,20 +363,23 @@ class Gallery extends Component {
     this.setState({ swiping })
   }
 
-  setRatio = ratio => {
-    this.setState({ ratio })
+  setImageStatus = ({ ...status }) => {
+    this.setState({ ...status })
   }
 
-  renderImageBox = ({
-    images,
-    infinite,
-    currentIndex,
-    swiping,
-    isPlaying,
-    showThumbnail,
-    playSpeed,
-    prefixCls
-  }) => {
+  renderImageBox = () => {
+    const {
+      images,
+      infinite,
+      showThumbnail,
+      playSpeed,
+      prefixCls
+    } = this.props
+    const {
+      currentIndex,
+      swiping,
+      isPlaying
+    } = this.state
     // 只有1张的时候，ReactCarousel会给ImageBox加height: auto导致撑不起来
     if (this.isMobile && images.length !== 1) {
       return (
@@ -394,9 +405,9 @@ class Gallery extends Component {
           pause={this.pause}
           prefixCls={prefixCls}
           isPlaying={isPlaying}
-          setRatio={this.setRatio}
+          setImageBox={this.setImageBox}
+          setImageStatus={this.setImageStatus}
           showThumbnail={showThumbnail}
-          ref={node => { this.imageBox = node }}
           src={images[this.state.currentIndex].original} />
       )
     }
@@ -420,8 +431,8 @@ class Gallery extends Component {
         index={index}
         src={imageObj.original}
         setSwiping={this.isMobile ? this.setSwiping : null}
-        setRatio={this.setRatio}
-        ref={node => { this.imageBoxes[index] = node }}
+        setImageBox={this.setImageBox}
+        setImageStatus={this.setImageStatus}
         handleTogglePlay={this.handleTogglePlay}
         play={this.play}
         pause={this.pause}
@@ -438,16 +449,29 @@ class Gallery extends Component {
     )
   }
 
-  renderToolbar = ({
-    showToolbar,
-    prefixCls,
-    images,
-    customToolbarItem,
-    toolbarConfig,
-    currentIndex,
-    src,
-    isPlaying
-  }) => {
+  renderToolbar = () => {
+    const {
+      showToolbar,
+      prefixCls,
+      images,
+      customToolbarItem,
+      zoomInIcon,
+      zoomOutIcon,
+      rotateLeftIcon,
+      rotateRightIcon,
+      pauseIcon,
+      playIcon,
+      toolbarConfig
+    } = this.props
+    const {
+      currentIndex,
+      src,
+      isPlaying,
+      loading,
+      error,
+      disableZoomIn,
+      disableZoomOut
+    } = this.state
     if (!showToolbar) {
       return
     }
@@ -458,10 +482,6 @@ class Gallery extends Component {
       handleRotate = this.imageBox.handleRotate
     }
 
-    if (this.imageBoxes[this.state.currentIndex]) {
-      handleZoom = this.imageBoxes[this.state.currentIndex].handleZoom
-      handleRotate = this.imageBoxes[this.state.currentIndex].handleRotate
-    }
     return (
       <Toolbar
         prefixCls={prefixCls}
@@ -473,20 +493,37 @@ class Gallery extends Component {
         customToolbarItem={customToolbarItem}
         handleZoom={handleZoom}
         handleRotate={handleRotate}
+        loading={loading}
+        error={error}
+        zoomInIcon={zoomInIcon}
+        zoomOutIcon={zoomOutIcon}
+        rotateLeftIcon={rotateLeftIcon}
+        rotateRightIcon={rotateRightIcon}
+        pauseIcon={pauseIcon}
+        playIcon={playIcon}
+        disableZoomIn={disableZoomIn}
+        disableZoomOut={disableZoomOut}
         handleTogglePlay={this.handleTogglePlay} />
     )
   }
 
-  renderThumbnail = ({
-    prefixCls,
-    images,
-    showThumbnail,
-    thumbnailIcon,
-    spinClass,
-    currentIndex,
-    renderThumbnail,
-    thumbnailScroll
-  }) => {
+  renderThumbnail = () => {
+    const {
+      prefixCls,
+      images,
+      showThumbnail: renderThumbnail,
+      thumbnailIcon,
+      spinClass
+    } = this.props
+    const {
+      currentIndex,
+      thumbnailScroll,
+      showThumbnail
+    } = this.state
+
+    if (this.isMobile) {
+      return null
+    }
     if (images.length > 1 && renderThumbnail) {
       return (
         <Thumbnail
@@ -506,14 +543,17 @@ class Gallery extends Component {
     }
   }
 
-  renderPrevNext = ({
-    images,
-    prefixCls,
-    prevIcon,
-    nextIcon,
-    disablePrev,
-    disableNext
-  }) => {
+  renderPrevNext = () => {
+    const {
+      images,
+      prefixCls,
+      prevIcon,
+      nextIcon
+    } = this.props
+    const {
+      disablePrev,
+      disableNext
+    } = this.state
     if (images.length > 1 && !this.isMobile) {
       const prevClass = classNames({
         [`${prefixCls}-prev`]: true,
@@ -560,75 +600,19 @@ class Gallery extends Component {
       prefixCls,
       images,
       closeIcon,
-      prevIcon,
-      nextIcon,
-      thumbnailIcon,
-      spinClass,
-      playSpeed,
-      showToolbar,
-      customToolbarItem,
-      showThumbnail: renderThumbnail,
-      toolbarConfig,
-      infinite,
       displayMode
     } = this.props
     const {
-      currentIndex,
-      src,
-      thumbnailScroll,
-      disablePrev,
-      disableNext,
-      isPlaying,
-      swiping,
       showThumbnail
     } = this.state
-    const prevNext = this.renderPrevNext({
-      images,
-      prefixCls,
-      prevIcon,
-      nextIcon,
-      disablePrev,
-      disableNext
-    })
 
-    let toolbar = null
-    if (this.state.renderToolbar) {
-      toolbar = this.renderToolbar({
-        showToolbar,
-        prefixCls,
-        images,
-        customToolbarItem,
-        toolbarConfig,
-        currentIndex,
-        src,
-        isPlaying
-      })
-    }
+    const prevNext = this.renderPrevNext()
 
-    let thumbnail = null
-    if (!this.isMobile) {
-      thumbnail = this.renderThumbnail({
-        prefixCls,
-        images,
-        showThumbnail,
-        thumbnailIcon,
-        spinClass,
-        currentIndex,
-        renderThumbnail,
-        thumbnailScroll
-      })
-    }
+    const toolbar = this.renderToolbar()
 
-    const imageBoxes = this.renderImageBox({
-      images,
-      infinite,
-      currentIndex,
-      swiping,
-      isPlaying,
-      showThumbnail,
-      playSpeed,
-      prefixCls
-    })
+    const thumbnail = this.renderThumbnail()
+
+    const imageBoxes = this.renderImageBox()
 
     return (
       <div className={classNames(prefixCls, {

@@ -1,7 +1,7 @@
 {
   "name": "rc-gallery",
   "port": "8020",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.6",
   "description": "图片查看器组件",
   "license": "MIT",
   "main": "lib/index.js",

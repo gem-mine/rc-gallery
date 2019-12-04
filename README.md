@@ -87,8 +87,9 @@ class App extends React.Component {
     if (this.state.isGallery) {
       gallery = (
         <Gallery
-          maxZoomSize={1}
-          minZoomSize={0.9}
+          showToolbar
+          maxZoomSize={2.5}
+          minZoomSize={0.3}
           zoomStep={0.4}
           images={images}
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}
@@ -338,6 +339,8 @@ class App extends React.Component {
       gallery = (
         <Gallery
           images={images}
+          showToolbar
+          rotateLeftIcon={<span>左转</span>}
           toolbarConfig={{
             rotateLeft: true,
             rotateRight: true,

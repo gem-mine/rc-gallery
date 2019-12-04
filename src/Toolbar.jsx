@@ -9,7 +9,20 @@ class Toolbar extends Component {
     toolbarConfig: PropTypes.object,
     currentIndex: PropTypes.number,
     images: PropTypes.array,
-    customToolbarItem: PropTypes.func
+    customToolbarItem: PropTypes.func,
+    handleRotate: PropTypes.func,
+    handleTogglePlay: PropTypes.func,
+    zoomInIcon: PropTypes.object,
+    zoomOutIcon: PropTypes.object,
+    rotateLeftIcon: PropTypes.object,
+    rotateRightIcon: PropTypes.object,
+    pauseIcon: PropTypes.object,
+    playIcon: PropTypes.object,
+    loading: PropTypes.bool,
+    error: PropTypes.bool,
+    disableZoomIn: PropTypes.bool,
+    disableZoomOut: PropTypes.bool,
+    isPlaying: PropTypes.bool
   }
   thumbnailItemClass = () => {
     const props = this.props
@@ -20,6 +33,7 @@ class Toolbar extends Component {
 
   zoomIn = () => {
     const props = this.props
+    const { zoomInIcon, error, loading, disableZoomIn } = this.props
     const classes = classNames(
       this.thumbnailItemClass(),
       {
@@ -27,32 +41,33 @@ class Toolbar extends Component {
       }
     )
 
-    const disabled = props.error || props.loading || props.disableZoomIn
+    const disabled = error || loading || disableZoomIn
     return (
       <span onClick={disabled ? null : () => { props.handleZoom(false) }}>
-        {props.zoomInIcon || <i className={classes} />}
+        {zoomInIcon || <i className={classes} />}
       </span>
     )
   }
 
   zoomOut = () => {
     const props = this.props
+    const { zoomOutIcon, error, loading, disableZoomOut } = this.props
     const classes = classNames(
       this.thumbnailItemClass(),
       {
         [`anticon-minus-circle`]: true
       }
     )
-    const disabled = props.error || props.loading || props.disableZoomOut
+    const disabled = error || loading || disableZoomOut
     return (
       <span onClick={disabled ? null : () => { props.handleZoom(true) }}>
-        {props.zoomOutIcon || <i className={classes} />}
+        {zoomOutIcon || <i className={classes} />}
       </span>
     )
   }
 
   rotateRight = () => {
-    const props = this.props
+    const { rotateRightIcon, error, handleRotate } = this.props
     const classes = classNames(
       this.thumbnailItemClass(),
       {
@@ -61,16 +76,16 @@ class Toolbar extends Component {
       }
     )
 
-    const disabled = props.error
+    const disabled = error
     return (
-      <span onClick={disabled ? null : () => { props.handleRotate(-90) }}>
-        {props.rotateRightIcon || <i className={classes} />}
+      <span onClick={disabled ? null : () => { handleRotate(-90) }}>
+        {rotateRightIcon || <i className={classes} />}
       </span>
     )
   }
 
   rotateLeft = () => {
-    const props = this.props
+    const { error, handleRotate, rotateLeftIcon } = this.props
     const classes = classNames(
       this.thumbnailItemClass(),
       {
@@ -78,41 +93,40 @@ class Toolbar extends Component {
       }
     )
 
-    const disabled = props.error
+    const disabled = error
     return (
-      <span onClick={disabled ? null : () => { props.handleRotate(90) }}>
-        {props.rotateLeftIcon || <i className={classes} />}
+      <span onClick={disabled ? null : () => { handleRotate(90) }}>
+        {rotateLeftIcon || <i className={classes} />}
       </span>
     )
   }
 
   autoPlay = () => {
-    const props = this.props
+    const { error, isPlaying, handleTogglePlay, pauseIcon, playIcon } = this.props
     const classes = classNames(
       this.thumbnailItemClass(),
       {
-        [`anticon-pause`]: props.isPlaying,
-        [`anticon-play-circle`]: !props.isPlaying
+        [`anticon-pause`]: isPlaying,
+        [`anticon-play-circle`]: !isPlaying
       }
     )
 
-    let autoPlay = null
-    // 图片数量小于1张的时候不显示自动播放
-    if (props.images.length > 1) {
-      const disabled = props.error
-      const icon = props.isPlaying ? props.pauseIcon : props.playIcon
-      autoPlay = (
-        <span onClick={disabled ? null : () => { props.handleTogglePlay(false) }}>
-          {icon || <i className={classes} />}
-        </span>
-      )
-    }
-    return autoPlay
+    const disabled = error
+    const icon = isPlaying ? pauseIcon : playIcon
+    return (
+      <span onClick={disabled ? null : () => { handleTogglePlay(false) }}>
+        {icon || <i className={classes} />}
+      </span>
+    )
   }
 
   classicItems = () => {
     // 生成toolbar操作项目数组
     return Object.keys(this.props.toolbarConfig).filter((value) => {
+      // 图片数量小于1张的时候不显示自动播放
+      if (this.props.images.length === 1 && value === 'autoPlay') {
+        return false
+      }
       return this[value]
     }).map((value) => {
       return this[value]()

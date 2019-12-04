@@ -17,7 +17,8 @@ export default class extends Component {
     onImageLoadError: PropTypes.func,
     play: PropTypes.func,
     pause: PropTypes.func,
-    setRatio: PropTypes.func,
+    setImageBox: PropTypes.func,
+    setImageStatus: PropTypes.func,
     currentIndex: PropTypes.number,
     index: PropTypes.number,
     setSwiping: PropTypes.func,
@@ -59,10 +60,13 @@ export default class extends Component {
 
   componentDidMount () {
     Util.addEvent(window, 'resize', this.handleResize)
+    // inline模式的时候阻止页面滚动 直接绑在元素上无效
+    Util.addEvent(this.imageRef, 'wheel', Util.stopDefault)
   }
 
   componentWillUnmount () {
     Util.removeEvent(window, 'resize', this.handleResize)
+    Util.removeEvent(this.imageRef, 'wheel', Util.stopDefault)
   }
 
   handleMoveStart = e => {
@@ -178,12 +182,13 @@ export default class extends Component {
       src
     }, () => {
       if (this.props.currentIndex === this.props.index) {
-        this.props.setRatio(this.state.ratio)
+        this.props.setImageBox(this)
+        this.props.setImageStatus({ loading: false, error: false, ratio: this.state.ratio })
       }
     })
   }
 
-  handleWheel = (e) => {
+  handleWheel = e => {
     const { mouseZoomDirection } = this.props
     if (!this.state.error) {
       this.handleZoom(mouseZoomDirection(e))
@@ -194,6 +199,8 @@ export default class extends Component {
     this.setState({
       loading: false,
       error: true
+    }, () => {
+      this.props.setImageStatus({ loading: true, error: false })
     })
     if (this.props.onImageLoadError) {
       this.props.onImageLoadError()
@@ -206,28 +213,32 @@ export default class extends Component {
   }
 
   handleZoom = (out = false) => {
-    const { zoomStep, minZoomSize, maxZoomSize, setRatio } = this.props
+    const { zoomStep, minZoomSize, maxZoomSize, setImageStatus } = this.props
     const imageRect = this.imageRef.getBoundingClientRect()
     const ratio = imageRect.width / (Util.isRotation(this.state.rotate) ? this.imageHeight : this.imageWidth)
-
     if ((ratio >= minZoomSize && out) || (ratio <= maxZoomSize && !out)) {
       const r = Util.getZoomRatio(ratio, { zoomStep, minZoomSize, maxZoomSize }, out)
       this.props.setSwiping && this.props.setSwiping(r <= this.initRatio)
+
       this.setState({
         ratio: r,
         translateX: (this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2 + 'px', // 居中 todo： 优化 pc端的时候需要顶点为左上角
         translateY: (this.imageBoxRef.offsetHeight - this.imageRef.offsetHeight) / 2 + 'px'
       }, () => {
-        setRatio(r)
+        setImageStatus({ ratio: r })
       })
     } else {
       if (out) {
         this.setState({
           disableZoomOut: true
+        }, () => {
+          setImageStatus({ disableZoomOut: true })
         })
       } else {
         this.setState({
           disableZoomIn: true
+        }, () => {
+          setImageStatus({ disableZoomIn: true })
         })
       }
     }
@@ -235,7 +246,7 @@ export default class extends Component {
 
   handleMobileZoom = (e) => {
     const { scale: ratio } = e
-    const { minZoomSize, maxZoomSize, setRatio } = this.props
+    const { minZoomSize, maxZoomSize, setImageStatus } = this.props
     const r = ratio * this.cacheRatio
     if (r >= minZoomSize && r <= maxZoomSize) {
       this.props.setSwiping && this.props.setSwiping(r <= this.initRatio)
@@ -244,12 +255,19 @@ export default class extends Component {
         translateX: `${(this.imageBoxRef.offsetWidth - this.imageRef.offsetWidth) / 2}px`,
         translateY: `${(this.imageBoxRef.offsetHeight - this.imageRef.offsetHeight) / 2}px`
       }, () => {
-        setRatio(r)
+        setImageStatus({ ratio: r })
       })
     } else {
+      const disableZoomOut = r <= minZoomSize
+      const disableZoomIn = r >= maxZoomSize
       this.setState({
-        disableZoomOut: r <= minZoomSize,
-        disableZoomIn: r >= maxZoomSize
+        disableZoomOut,
+        disableZoomIn
+      }, () => {
+        setImageStatus({
+          disableZoomOut,
+          disableZoomIn
+        })
       })
     }
   }
@@ -257,7 +275,9 @@ export default class extends Component {
   // todo: 懒加载优化
   componentDidUpdate (prevProps) {
     if (prevProps.src !== this.props.src) {
-      this.setState({ loading: true })
+      this.setState({ loading: true }, () => {
+        this.props.setImageStatus({ loading: true })
+      })
     }
     if (prevProps.currentIndex !== this.props.currentIndex || prevProps.showThumbnail !== this.props.showThumbnail) {
       this.initImage()
