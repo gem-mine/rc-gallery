@@ -40,7 +40,8 @@ class Gallery extends Component {
     nextIcon: PropTypes.node,
     displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
-    mouseZoomDirection: PropTypes.func
+    mouseZoomDirection: PropTypes.func,
+    direction: PropTypes.string
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
