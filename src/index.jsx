@@ -245,18 +245,28 @@ class Gallery extends Component {
     const leftArrow = 37
     const rightArrow = 39
     const escKey = 27
+    const { direction } = this.props
+    const { disablePrev, disableNext } = this.state
+    let leftArrowClick = disablePrev ? null : this.handlePrev
+    let rightArrowClick = disableNext ? null : this.handleNext
+    if (direction === 'rtl') {
+      leftArrowClick = disableNext ? null : this.handleNext
+      rightArrowClick = disablePrev ? null : this.handlePrev
+    }
 
     switch (e.keyCode) {
       case escKey:
         this.props.onClose()
         break
       case leftArrow:
-        if (this.canSlideLeft()) {
-          this.handlePrev()
+        if (leftArrowClick) {
+          leftArrowClick()
         }
         break
       case rightArrow:
-        this.handleNext()
+        if (rightArrowClick) {
+          rightArrowClick()
+        }
         break
     }
   }
@@ -486,22 +496,13 @@ class Gallery extends Component {
     })
   }
 
-  canSlideLeft () {
-    return this.props.infinite || this.state.currentIndex > 0
-  }
-
-  canSlideRight () {
-    return this.props.infinite ||
-      this.state.currentIndex < this.props.images.length - 1
-  }
-
   play () {
     if (!this.intervalId) {
       const { playSpeed } = this.props
       this.setState({ isPlaying: true })
 
       this.intervalId = window.setInterval(() => {
-        if (!this.canSlideRight()) {
+        if (this.state.disableNext) {
           this.pause()
         } else {
           this.handleNext()
@@ -643,7 +644,7 @@ class Gallery extends Component {
           ref={node => { this.thumbnailComponent = node }}
           images={this.props.images}
           handleThumbnailItemClick={this.handleThumbnailItemClick}
-          handleShowThumbnail={this.handleShowThumbnail}
+          handleShowThumbnail={this.handlnexteShowThumbnail}
           thumbnailScroll={this.state.thumbnailScroll}
           thumbnailScrollDuration={this.thumbnailScrollDuration} />
       )

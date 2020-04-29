@@ -31,7 +31,7 @@ class Thumbnail extends Component {
     if (props.direction === 'rtl') {
       thumbContentStyle = { right: props.thumbnailScroll, transition: `right ${props.thumbnailScrollDuration}ms` }
     } else {
-      thumbContentStyle = { right: props.thumbnailScroll, transition: `right ${props.thumbnailScrollDuration}ms` }
+      thumbContentStyle = { left: props.thumbnailScroll, transition: `left ${props.thumbnailScrollDuration}ms` }
     }
     return (
       <div className={`${props.prefixCls}-thumbnail`} ref={node => { this.thumbnailWrapper = node }} style={{ ...props.style }}>
