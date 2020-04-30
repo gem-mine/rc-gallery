@@ -15,7 +15,7 @@
     "site": "md-tools build",
     "build": "npm run clean && npm run babel && shx cp -rf src/style/*.less lib/style",
     "clean": "shx rm -rf lib site && shx echo clean Done",
-    "pub": "npm run build && npm publish --tag alpha"
+    "pub": "npm run build && npm publish"
   },
   "homepage": "https://github.com/mraiguo/rc-gallery",
   "pre-commit": [
