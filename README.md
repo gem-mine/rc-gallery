@@ -682,6 +682,7 @@ ReactDOM.render(<App />, mountNode);
 | rotateLeftIcon | 自定义左转图标 | ReactNode | 无 |
 | playIcon     | 自定义播放图标 | ReactNode | 无 |
 | pauseIcon    | 自定义暂停图标 | ReactNode | 无 |
+| direction    | 设置缩略图移动方向 | `ltr` \| `rtl` | 无 |
 
 ### images
 
