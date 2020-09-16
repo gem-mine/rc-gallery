@@ -161,8 +161,8 @@ class Gallery extends Component {
 
       if (mouseWheelZoom) {
         // 鼠标滚轮缩放事件
-        Util.addEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.addEvent(this.image, 'wheel', this.handleWheel)
+        Util.addEvent(this.imageBox, 'mousewheel', this.handleWheel)//  for firefox
+        Util.addEvent(this.imageBox, 'wheel', this.handleWheel)
       }
     }
     if (displayMode === 'modal') {
@@ -192,8 +192,8 @@ class Gallery extends Component {
       Util.removeEvent(this.image, 'mouseup', this.handleMoveEnd)
 
       if (mouseWheelZoom) {
-        Util.removeEvent(this.image, 'mousewheel', this.handleWheel) //  for firefox
-        Util.removeEvent(this.image, 'wheel', this.handleWheel)
+        Util.removeEvent(this.imageBox, 'mousewheel', this.handleWheel) //  for firefox
+        Util.removeEvent(this.imageBox, 'wheel', this.handleWheel)
       }
     }
     // 清除自动播放定时器
@@ -287,12 +287,9 @@ class Gallery extends Component {
   handleWheel = e => {
     // inline模式的时候阻止页面滚动
     e.preventDefault()
-    if (!this.state.error) {
-      const box = this.imageBoxRef.imageRef || null
-      if (Util.isInside(e, box) && e.deltaY !== 0) {
-        const { mouseZoomDirection } = this.props
-        this.handleZoom(mouseZoomDirection(e))
-      }
+    if (!this.state.error && e.deltaY !== 0) {
+      const { mouseZoomDirection } = this.props
+      this.handleZoom(mouseZoomDirection(e))
     }
   }
 
