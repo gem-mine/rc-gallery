@@ -9,21 +9,7 @@ class Toolbar extends Component {
     toolbarConfig: PropTypes.object,
     currentIndex: PropTypes.number,
     images: PropTypes.array,
-    customToolbarItem: PropTypes.func,
-    error: PropTypes.bool,
-    loading: PropTypes.bool,
-    disableZoomIn: PropTypes.bool,
-    disableZoomOut: PropTypes.bool,
-    handleZoom: PropTypes.func,
-    handleRotate: PropTypes.func,
-    handleTogglePlay: PropTypes.func,
-    zoomInIcon: PropTypes.object,
-    zoomOutIcon: PropTypes.object,
-    rotateRightIcon: PropTypes.object,
-    rotateLeftIcon: PropTypes.object,
-    playIcon: PropTypes.object,
-    pauseIcon: PropTypes.object,
-    isPlaying: PropTypes.bool
+    customToolbarItem: PropTypes.func
   }
   thumbnailItemClass = () => {
     const props = this.props
