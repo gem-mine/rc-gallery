@@ -641,7 +641,7 @@ class Gallery extends Component {
           ref={node => { this.thumbnailComponent = node }}
           images={this.props.images}
           handleThumbnailItemClick={this.handleThumbnailItemClick}
-          handleShowThumbnail={this.handlnexteShowThumbnail}
+          handleShowThumbnail={this.handleShowThumbnail}
           thumbnailScroll={this.state.thumbnailScroll}
           thumbnailScrollDuration={this.thumbnailScrollDuration} />
       )
