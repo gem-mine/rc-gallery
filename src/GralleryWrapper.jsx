@@ -7,7 +7,7 @@ class GalleryWrapper extends Component {
   static propTypes = {
     displayMode: PropTypes.string, // 是否弹出全屏
     visible: PropTypes.bool,
-    getPopupContainer: PropTypes.oneOfType([
+    getContainer: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.element,
       PropTypes.func
@@ -20,7 +20,7 @@ class GalleryWrapper extends Component {
 
   render () {
     const {
-      getPopupContainer,
+      getContainer,
       ...galleryProps
     } = this.props
 
@@ -28,7 +28,7 @@ class GalleryWrapper extends Component {
 
     if (displayMode === 'modal' && visible !== undefined) {
       return (
-        <Portal getContainer={getPopupContainer} visible={visible} >
+        <Portal getContainer={getContainer} visible={visible} >
           {() => (
             <Gallery {...galleryProps} />
           )}
@@ -37,7 +37,7 @@ class GalleryWrapper extends Component {
     }
 
     // false： 挂载在当前dom节点
-    if (!getPopupContainer) {
+    if (!getContainer) {
       return <Gallery {...galleryProps} />
     }
 
