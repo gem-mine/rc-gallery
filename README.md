@@ -122,6 +122,151 @@ ReactDOM.render(<App />, mountNode);
 }
 ```
 
+### 控制显隐
+
+使用 `visible` 属性控制 Gallery 是否可见。
+
+
+```jsx
+import "rc-gallery/lib/style/";
+import Gallery from 'rc-gallery'
+
+const imageOriginal = [
+      {
+        original: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5.jpg',
+        thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
+        description: <div>图片描述</div>
+      },
+      {
+        original: '//img.zmei.me/gm/26828021367384226.jpg',
+        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg',
+        description: <div style={{overflowY: 'scroll', maxHeight: '100px'}}>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/></div>
+      },
+      {
+        original: '//img.zmei.me/gm/priview.jpg',
+        thumbnail: '//img.zmei.me/gm/priview-thumb.jpg'
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg1.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg1-thumb.jpg',
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg2.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
+      }
+    ]
+const images = [...imageOriginal, ...imageOriginal, ...imageOriginal, ...imageOriginal]
+
+class App extends React.Component {
+  state = {
+    isGallery: false,
+  }
+  openGallery = () => {
+    this.setState({
+      isGallery: true
+    })
+  }
+  closeGallery = () => {
+    this.setState({
+      isGallery: false
+    })
+  }
+  render() {
+    return (
+      <div>
+        <Gallery
+          maxZoomSize={1}
+          minZoomSize={0.9}
+          zoomStep={0.4}
+          images={images}
+          spinClass={<div className={`demo-custom-spin`}>loading...</div>}
+          onClose={this.closeGallery} 
+          visible={this.state.isGallery} 
+        />
+       <button onClick={this.openGallery}>查看图片</button>
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<App />, mountNode);
+```
+
+### 挂载节点
+
+使用 `getPopupContainer` 属性指定 Gallery 挂载的 HTML 节点,，默认挂载在 `body`，值为 `false` 时挂载在当前dom节点。
+
+```jsx
+import "rc-gallery/lib/style/";
+import Gallery from 'rc-gallery'
+
+const imageOriginal = [
+      {
+        original: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5.jpg',
+        thumbnail: '//img.zmei.me/gm/a801236bjw1ez812gy3g8j20rs0rs0z5-thumb.jpg',
+        description: <div>图片描述</div>
+      },
+      {
+        original: '//img.zmei.me/gm/26828021367384226.jpg',
+        thumbnail: '//img.zmei.me/gm/26828021367384226-thumb.jpg',
+        description: <div style={{overflowY: 'scroll', maxHeight: '100px'}}>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/>图片描述<br/></div>
+      },
+      {
+        original: '//img.zmei.me/gm/priview.jpg',
+        thumbnail: '//img.zmei.me/gm/priview-thumb.jpg'
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg1.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg1-thumb.jpg',
+      },
+      {
+        original: '//img.zmei.me/gm/lazyimg2.jpg',
+        thumbnail: '//img.zmei.me/gm/lazyimg2-thumb.jpg'
+      }
+    ]
+const images = [...imageOriginal, ...imageOriginal, ...imageOriginal, ...imageOriginal]
+
+class App extends React.Component {
+  state = {
+    isGallery: false,
+  }
+  openGallery = () => {
+    this.setState({
+      isGallery: true
+    })
+  }
+  closeGallery = () => {
+    this.setState({
+      isGallery: false
+    })
+  }
+  saveContainer = container => {
+    this.container = container;
+  };
+
+  getContainer = () => this.container;
+  render() {
+    return (
+      <div>
+       <div ref={this.saveContainer} id="test"/>
+       <Gallery
+         maxZoomSize={1}
+         minZoomSize={0.9}
+         zoomStep={0.4}
+         images={images}
+         spinClass={<div className={`demo-custom-spin`}>loading...</div>}
+         onClose={this.closeGallery} 
+         visible={this.state.isGallery}
+         getPopupContainer={this.getContainer}
+       />
+       <button onClick={this.openGallery}>查看图片</button>
+      </div>
+    );
+  }
+}
+
+ReactDOM.render(<App />, mountNode);
+```
 ### 事件回调
 
 事件发生时触发回调
@@ -683,6 +828,8 @@ ReactDOM.render(<App />, mountNode);
 | playIcon     | 自定义播放图标 | ReactNode | 无 |
 | pauseIcon    | 自定义暂停图标 | ReactNode | 无 |
 | direction    | 设置缩略图移动方向 | `ltr` \| `rtl` | 无 |
+| visible    | 控制Gallery是否可见 | boolean | 无 |
+| getPopupContainer | 在 `modal` 模式下，指定 Gallery 挂载的 HTML 节点，false 为挂载在当前 dom。 注意：只有使用 `visible` 控制显隐时，该属性才生效。[详见](#挂载节点) | HTMLElement \| () => HTMLElement \| false | document.body |
 
 ### images
 

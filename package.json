@@ -29,7 +29,8 @@
     "babel-runtime": "^6.22.0",
     "classnames": "~2.2.0",
     "lodash.throttle": "^4.1.1",
-    "prop-types": "^15.6.2"
+    "prop-types": "^15.6.2",
+    "rc-util": "^5.7.0"
   },
   "devDependencies": {
     "babel-cli": "^6.18.0",
@@ -59,8 +60,8 @@
     "md-tools-theme-component-react": "^0.1.17",
     "postcss-color-rgba-fallback": "^3.0.0",
     "pre-commit": "1.x",
-    "react": "0.14.9",
-    "react-dom": "0.14.9",
+    "react": "^16.5.2",
+    "react-dom": "^16.5.2",
     "react-router": "3.2.1",
     "shx": "^0.2.2",
     "stylelint": "^8.4.0",
