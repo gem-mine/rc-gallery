@@ -10,12 +10,14 @@ class GalleryWrapper extends Component {
     getContainer: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.element,
-      PropTypes.func
+      PropTypes.func,
+      PropTypes.bool
     ]) // 指定挂载的 HTML 节点, false 为挂载在当前 dom
   }
 
   static defaultProps = {
-    displayMode: 'modal'
+    displayMode: 'modal',
+    getContainer: 'body'
   }
 
   render () {
@@ -26,22 +28,25 @@ class GalleryWrapper extends Component {
 
     const { displayMode, visible } = this.props
 
-    if (displayMode === 'modal' && visible !== undefined) {
-      return (
+    let gallery = <Gallery {...galleryProps} />
+
+    // false 渲染在当前dom节点
+    if (!getContainer) {
+      gallery = visible ? <Gallery {...galleryProps} /> : null
+    }
+
+    // 'modal'模式 使用visible控制显隐
+    if (displayMode === 'modal' && visible !== undefined && getContainer) {
+      gallery = visible ? (
         <Portal getContainer={getContainer} visible={visible} >
           {() => (
             <Gallery {...galleryProps} />
           )}
         </Portal>
-      )
+      ) : null
     }
 
-    // false： 挂载在当前dom节点
-    if (!getContainer) {
-      return <Gallery {...galleryProps} />
-    }
-
-    return <Gallery {...galleryProps} />
+    return gallery
   }
 }
 
