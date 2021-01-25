@@ -41,8 +41,7 @@ class Gallery extends Component {
     displayMode: PropTypes.string, // 是否弹出全屏
     mouseWheelZoom: PropTypes.bool, // 开启鼠标滚轮放大缩小
     mouseZoomDirection: PropTypes.func,
-    direction: PropTypes.string,
-    visible: PropTypes.bool
+    direction: PropTypes.string
   }
   static defaultProps = {
     prefixCls: 'fish-gallery',
@@ -592,8 +591,7 @@ class Gallery extends Component {
       closeIcon,
       prevIcon,
       nextIcon,
-      displayMode,
-      visible
+      displayMode
     } = this.props
 
     let prev = null
@@ -651,8 +649,7 @@ class Gallery extends Component {
 
     return (
       <div className={classNames(prefixCls, {
-        [`${prefixCls}-inline`]: displayMode === 'inline',
-        [`${prefixCls}-hidden`]: visible !== undefined && !visible // 存在props.visible时
+        [`${prefixCls}-inline`]: displayMode === 'inline'
       })}>
         <div
           className={`${prefixCls}-content`}

@@ -182,6 +182,7 @@ class App extends React.Component {
           spinClass={<div className={`demo-custom-spin`}>loading...</div>}
           onClose={this.closeGallery} 
           visible={this.state.isGallery} 
+          getContainer={false}
         />
        <button onClick={this.openGallery}>查看图片</button>
       </div>
@@ -628,7 +629,6 @@ class App extends React.Component {
       gallery = (
         <Gallery
           images={images}
-
           onClose={this.closeGallery} />
       )
     }
@@ -829,7 +829,7 @@ ReactDOM.render(<App />, mountNode);
 | pauseIcon    | 自定义暂停图标 | ReactNode | 无 |
 | direction    | 设置缩略图移动方向 | `ltr` \| `rtl` | 无 |
 | visible    | 控制Gallery是否可见 | boolean | 无 |
-| getContainer | 在 `modal` 模式下，指定 Gallery 挂载的 HTML 节点，false 为挂载在当前 dom。 注意：只有使用 `visible` 控制显隐时，该属性才生效。[详见](#挂载节点) | HTMLElement \| () => HTMLElement \| false | document.body |
+| getContainer | 在 `modal` 模式下，指定 Gallery 挂载的 HTML 节点，false 为挂载在当前 dom。 注意：只有使用 `visible` 控制显隐时，该属性才生效。[详见](#挂载节点) | HTMLElement \| () => HTMLElement \| false | body |
 
 ### images
 
