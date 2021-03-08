@@ -7,7 +7,7 @@ import Footer from './Footer'
 import Thumbnail from './Thumbnail'
 import throttle from 'lodash.throttle'
 import classNames from 'classnames'
-import ReactCarousel from 'rmc-nuka-carousel'
+import ReactCarousel from '@gem-mine/rmc-nuka-carousel'
 
 class Gallery extends Component {
   static propTypes = {
