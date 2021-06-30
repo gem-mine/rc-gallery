@@ -12,6 +12,7 @@ class Toolbar extends Component {
     customToolbarItem: PropTypes.func,
     handleRotate: PropTypes.func,
     handleTogglePlay: PropTypes.func,
+    handleZoom: PropTypes.func,
     zoomInIcon: PropTypes.object,
     zoomOutIcon: PropTypes.object,
     rotateLeftIcon: PropTypes.object,

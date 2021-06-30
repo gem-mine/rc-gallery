@@ -212,7 +212,7 @@ export default {
   },
 
   getComputedTranslateXY (el) {
-    if (!window.getComputedStyle) {
+    if (!window.getComputedStyle || !el) {
       return
     }
     const style = window.getComputedStyle(el)
@@ -225,14 +225,6 @@ export default {
     mat = transform.match(/^matrix\((.+)\)$/)
     if (mat) {
       return [parseFloat(mat[1].split(', ')[4]), parseFloat(mat[1].split(', ')[5])]
-    }
-
-    if (isIE9) {
-      const matX = transform.match(/translateX\(([-\][\d]+(px))\)/)
-      const matY = transform.match(/translateY\(([-\][\d]+(px))\)/)
-      if (matX && matX[1] && matY && matY[1]) {
-        return [parseFloat(matX[1]), parseFloat(matY[1])]
-      }
     }
   }
 }

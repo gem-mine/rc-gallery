@@ -61,12 +61,16 @@ export default class extends Component {
   componentDidMount () {
     Util.addEvent(window, 'resize', this.handleResize)
     // inline模式的时候阻止页面滚动 直接绑在元素上无效
-    Util.addEvent(this.imageRef, 'wheel', Util.stopDefault)
+    if (this.imageRef) {
+      Util.addEvent(this.imageRef, 'wheel', Util.stopDefault)
+    }
   }
 
   componentWillUnmount () {
     Util.removeEvent(window, 'resize', this.handleResize)
-    Util.removeEvent(this.imageRef, 'wheel', Util.stopDefault)
+    if (this.imageRef) {
+      Util.removeEvent(this.imageRef, 'wheel', Util.stopDefault)
+    }
   }
 
   handleMoveStart = e => {
@@ -92,6 +96,9 @@ export default class extends Component {
   }
 
   handleMove = (e) => {
+    if (!this.imageRef) {
+      return
+    }
     let xDelta = 0
     let yDelta = 0
     if (isMobile) {
@@ -162,6 +169,9 @@ export default class extends Component {
     const { minZoomSize, maxZoomSize, src } = this.props
     const imageBox = this.imageBoxRef
     const imageEle = this.imageRef
+    if (!imageEle) {
+      return
+    }
     const { width } = Util.getPosition({
       width: imageEle.width,
       height: imageEle.height,
