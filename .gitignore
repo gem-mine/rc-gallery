@@ -2,4 +2,4 @@
 /lib
 .idea/
 package-lock.json
-site/
+.history/

@@ -14,6 +14,7 @@ const isMac = /macintosh|mac os x/i.test(navigator.userAgent)
 class Gallery extends Component {
   static propTypes = {
     prefixCls: PropTypes.string,
+    className: PropTypes.string,
     startIndex: PropTypes.number,
     playSpeed: PropTypes.number,
     autoPlay: PropTypes.bool,
@@ -70,7 +71,7 @@ class Gallery extends Component {
     zoomStep: 0.2,
     maxZoomSize: 3,
     minZoomSize: 0.2,
-    customToolbarItem: () => {},
+    customToolbarItem: () => { },
     displayMode: 'modal',
     mouseWheelZoom: true,
     mouseZoomDirection: (e) => {
@@ -591,7 +592,8 @@ class Gallery extends Component {
       closeIcon,
       prevIcon,
       nextIcon,
-      displayMode
+      displayMode,
+      className
     } = this.props
 
     let prev = null
@@ -604,7 +606,7 @@ class Gallery extends Component {
       })
       prev = (
         <div className={prevClass} onClick={disablePrev ? null : this.handlePrev}>
-          { prevIcon || <i className="anticon anticon-left" /> }
+          {prevIcon || <i className="anticon anticon-left" />}
         </div>
       )
 
@@ -614,7 +616,7 @@ class Gallery extends Component {
       })
       next = (
         <div className={nextClass} onClick={disableNext ? null : this.handleNext}>
-          { nextIcon || <i className="anticon anticon-right" /> }
+          {nextIcon || <i className="anticon anticon-right" />}
         </div>
       )
     }
@@ -648,7 +650,7 @@ class Gallery extends Component {
     }
 
     return (
-      <div className={classNames(prefixCls, {
+      <div className={classNames(prefixCls, className, {
         [`${prefixCls}-inline`]: displayMode === 'inline'
       })}>
         <div
